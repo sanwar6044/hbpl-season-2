@@ -1,53 +1,118 @@
-// HBPL Season 2 - Website JavaScript
+// ======================================
+// HBPL SEASON 2 - REAL DATABASE VERSION
+// ======================================
 
-// Mobile Navigation
+const SUPABASE_URL =
+  "https://izcmltsynxecmvvvpwwf.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_bsOWgTYMvizka3LfftaIYg_naJI0ukF";
+
+
+// ======================================
+// MOBILE NAVIGATION
+// ======================================
+
 const menuBtn = document.getElementById("menuBtn");
 const nav = document.getElementById("nav");
 
 if (menuBtn && nav) {
-    menuBtn.addEventListener("click", () => {
-        nav.classList.toggle("open");
-    });
+  menuBtn.addEventListener("click", () => {
+    nav.classList.toggle("open");
+  });
 
-    nav.querySelectorAll("a").forEach(link => {
-        link.addEventListener("click", () => {
-            nav.classList.remove("open");
-        });
+  nav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("open");
     });
+  });
 }
 
-// Player Registration
+
+// ======================================
+// PLAYER REGISTRATION
+// ======================================
+
 const form = document.getElementById("regForm");
+const message = document.getElementById("formMessage");
 
 if (form) {
-    form.addEventListener("submit", function(event) {
-        event.preventDefault();
 
-        const data = Object.fromEntries(
-            new FormData(form).entries()
-        );
+  form.addEventListener("submit", async function(event) {
 
-        const registrations = JSON.parse(
-            localStorage.getItem("hbpl_demo_registrations") || "[]"
-        );
+    event.preventDefault();
 
-        data.id = "HBPL-" + Date.now().toString().slice(-7);
-        data.submittedAt = new Date().toISOString();
+    const button = form.querySelector(
+      'button[type="submit"]'
+    );
 
-        registrations.push(data);
+    const data = Object.fromEntries(
+      new FormData(form).entries()
+    );
 
-        localStorage.setItem(
-            "hbpl_demo_registrations",
-            JSON.stringify(registrations)
-        );
+    const registration = {
+      player_name: String(data.name || "").trim(),
+      mobile: String(data.phone || "").trim(),
+      age: Number(data.age),
+      role: String(data.role || ""),
+      address: String(data.address || "").trim(),
+      registration_status: "pending"
+    };
 
-        const message = document.getElementById("formMessage");
+    if (message) {
+      message.textContent = "Submitting registration...";
+    }
 
-        if (message) {
-            message.textContentu =
-                "Registration submitted successfully! Your ID: " + data.id;
+    if (button) button.disabled = true;
+
+    try {
+
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/registrations`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Prefer": "return=minimal"
+          },
+
+          body: JSON.stringify(registration)
         }
+      );
 
-        form.reset();
-    });
+      if (!response.ok) {
+  const errorText = await response.text();
+  throw new Error(errorText || "Registration failed");
+}
+
+if (message) {
+  message.textContent =
+    "Registration submitted successfully!";
+}
+
+
+    
+
+      form.reset();
+
+    } catch (error) {
+
+      console.error("HBPL Registration Error:", error);
+
+      if (message) {
+        message.textContent =
+          "Registration failed: " + error.message;
+      }
+
+    } finally {
+
+      if (button) button.disabled = false;
+
+    }
+
+  });
+
 }
