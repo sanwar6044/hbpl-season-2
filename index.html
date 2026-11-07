@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071b43">
+  <meta name="description" content="Hal Baida Premier League Season 2 — tournament information, registration, teams and fixtures.">
+  <title>HBPL Season 2 | Hal Baida Premier League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topline"><span>🏏 HAL BAIDA PREMIER LEAGUE</span><span>SEASON 2 · 2027</span></div>
+  <header class="header">
+    <a class="brand" href="#home"><span class="brand-ball">🏏</span><span><b>HBPL</b><small>HAL BAIDA PREMIER LEAGUE</small></span></a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <nav id="nav">
+      <a href="#home">Home</a><a href="#about">About</a><a href="#details">Tournament</a>
+      <a href="#registration">Registration</a><a href="#fixtures">Fixtures</a><a href="#contact">Contact</a>
+    </nav>
+    <a class="nav-cta" href="#registration">Register Now ↗</a>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-glow"></div>
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> THE BIGGEST CRICKET SHOWDOWN</div>
+        <h1>HAL BAIDA<br><em>PREMIER</em> LEAGUE</h1>
+        <div class="season-tag">SEASON <strong>02</strong> <span>◆</span> 2027</div>
+        <p>One ground. Big dreams. Unforgettable cricket.<br>Get ready for the ultimate battle for glory.</p>
+        <div class="hero-actions"><a class="btn btn-gold" href="#registration">Player Registration <b>↗</b></a><a class="btn btn-outline" href="#details">Explore Tournament</a></div>
+        <div class="hero-meta"><span>📍 HAL BAIDA MADRASA</span><span>📅 26 JANUARY 2027</span></div>
+      </div>
+      <div class="hero-poster">
+        <div class="poster-frame">
+          <img src="assets/hbpl-poster.jpg" alt="HBPL Season 2 official tournament poster" onerror="this.style.display='none';document.getElementById('posterFallback').style.display='grid'">
+          <div id="posterFallback" class="poster-fallback"><div>🏏</div><b>HBPL</b><span>HAL BAIDA PREMIER LEAGUE</span><strong>SEASON 2</strong></div>
+        </div>
+        <div class="poster-caption">OFFICIAL TOURNAMENT POSTER <span>2027</span></div>
+      </div>
+      <div class="hero-bottom"><span>THE ROAD TO THE TROPHY STARTS HERE</span><span>HBPL / 2027</span></div>
+    </section>
+
+    <section class="prize-strip">
+      <div><small>🏆 CHAMPIONS</small><strong>₹55,000</strong><span>FIRST PRIZE</span></div>
+      <div><small>🥈 RUNNERS UP</small><strong>₹45,000</strong><span>SECOND PRIZE</span></div>
+      <div><small>📅 TOURNAMENT STARTS</small><strong>26 JAN</strong><span>2027</span></div>
+    </section>
+
+    <section class="section intro" id="about">
+      <div class="section-label">01 / ABOUT THE LEAGUE</div>
+      <div class="intro-grid"><div><h2>MORE THAN A GAME.<br><em>IT'S A LEGACY.</em></h2></div>
+      <div><p>Hal Baida Premier League returns for Season 2. Bringing teams, players and cricket fans together for a celebration of talent, teamwork and sportsmanship.</p><p class="muted">Join the action, support your team and be part of the HBPL journey.</p></div></div>
+    </section>
+
+    <section class="section details" id="details">
+      <div class="section-label">02 / TOURNAMENT DETAILS</div>
+      <div class="section-heading"><h2>THE <em>BIG NUMBERS</em></h2><p>Mark your calendar. The countdown is on.</p></div>
+      <div class="detail-grid">
+        <article class="detail-card"><span>🗓️</span><small>MATCH STARTS</small><b>26 JAN 2027</b><p>Tournament opening day</p></article>
+        <article class="detail-card"><span>📝</span><small>REGISTRATION DEADLINE</small><b>15 JAN 2027</b><p>Last date to register</p></article>
+        <article class="detail-card"><span>🔨</span><small>PLAYER AUCTION</small><b>20 JAN 2027</b><p>Auction day</p></article>
+        <article class="detail-card"><span>📍</span><small>VENUE</small><b>HAL BAIDA</b><p>Hal Baida Madrasa</p></article>
+      </div>
+      <div class="fee-banner"><div><small>TEAM ENTRY FEE</small><b>₹7,000</b></div><div><small>AUCTION MONEY</small><b>₹25,000</b></div><div><small>PLAYER REGISTRATION</small><b>₹150</b></div></div>
+    </section>
+
+    <section class="registration section" id="registration">
+      <div class="section-label">03 / JOIN THE LEAGUE</div>
+      <div class="registration-grid">
+        <div><h2>READY TO<br><em>PLAY BIG?</em></h2><p>Register your interest for HBPL Season 2. Our organising team will contact you with the next steps.</p><div class="reg-price"><span>PLAYER REGISTRATION FEE</span><b>₹150</b></div><small class="note">Demo form only: submissions are saved in this browser. Online payment is not connected yet.</small></div>
+        <form id="regForm" class="reg-form">
+          <label>Full name<input name="name" placeholder="Enter player name" required></label>
+          <label>Mobile number<input name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" placeholder="10-digit mobile number" required></label>
+          <label>Age<input name="age" type="number" min="10" max="70" placeholder="Your age" required></label>
+          <label>Playing role<select name="role" required><option value="">Select role</option><option>Batsman</option><option>Bowler</option><option>All-rounder</option><option>Wicket-keeper</option></select></label>
+          <label class="full">Village / Address<input name="address" placeholder="Enter village or address" required></label>
+          <button class="btn btn-gold full" type="submit">Submit Registration <b>↗</b></button>
+          <div id="formMessage" class="form-message full" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section fixtures" id="fixtures">
+      <div class="section-label">04 / MATCH CENTRE</div>
+      <div class="section-heading"><h2>FIXTURES & <em>RESULTS</em></h2><p>Match schedule will be announced by the organisers.</p></div>
+      <div class="empty-state"><div>🏏</div><b>FIXTURES COMING SOON</b><p>Stay tuned for team matchups, timings and results.</p></div>
+    </section>
+
+    <section class="organisers section">
+      <div class="section-label">05 / THE ORGANISERS</div><h2>POWERED BY <em>THE COMMUNITY</em></h2>
+      <div class="organiser-box"><div class="gavel">⚖️</div><div><small>ORGANISED BY</small><b>MAHFOOZ ENTERPRISES</b><span>Suma Tent House · And all the people of Hal Baida</span></div></div>
+    </section>
+
+    <section class="contact section" id="contact">
+      <div><div class="section-label">06 / GET IN TOUCH</div><h2>LET'S TALK<br><em>CRICKET.</em></h2><p>For tournament enquiries and registration assistance, contact the organising team.</p></div>
+      <div class="contact-list"><a href="tel:7070932698"><span>CALL / WHATSAPP 01</span><b>70709 32698 ↗</b></a><a href="tel:7277457997"><span>CALL / WHATSAPP 02</span><b>72774 57997 ↗</b></a><a href="tel:9523720488"><span>CALL / WHATSAPP 03</span><b>95237 20488 ↗</b></a><a href="https://www.youtube.com/" target="_blank" rel="noreferrer"><span>YOUTUBE CHANNEL</span><b>AHYC HAL BAIDA ↗</b></a></div>
+    </section>
+  </main>
+  <footer><a class="brand" href="#home"><span class="brand-ball">🏏</span><span><b>HBPL</b><small>HAL BAIDA PREMIER LEAGUE</small></span></a><span>SEASON 2 · 2027</span><span>© HBPL. ALL RIGHTS RESERVED.</span></footer>
+  <script src="script.js"></script>
+</body>
+</html>
