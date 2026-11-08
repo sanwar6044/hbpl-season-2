@@ -169,8 +169,8 @@ async function checkAdmin() {
 
   status.textContent = "Admin access verified!";
   loadPlayers();
+loadTeams();
 }
-
 
 document.getElementById("logoutBtn")
 .addEventListener("click",async()=>{
@@ -288,7 +288,100 @@ async function loadPlayers() {
 
   renderPlayers();
 }
-      
+  async function loadTeams() {
+  const main = document.querySelector("main");
+
+  let section = document.getElementById("teamsSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "teamsSection";
+    section.className = "card";
+    main.appendChild(section);
+  }
+
+  section.innerHTML = `
+    <h2>🏆 Team Management</h2>
+    <input id="teamSearch" placeholder="Search team or owner">
+    <select id="teamFilter">
+      <option value="">All Teams</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <p id="teamMessage">Loading teams...</p>
+    <div id="teamList"></div>
+  `;
+
+  const { data, error } = await db
+    .from("teams")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const message = document.getElementById("teamMessage");
+  const list = document.getElementById("teamList");
+
+  if (error) {
+    message.textContent = "Error: " + error.message;
+    return;
+  }
+
+  function renderTeams() {
+    const search = document.getElementById("teamSearch").value.toLowerCase();
+    const filter = document.getElementById("teamFilter").value;
+
+    const filtered = data.filter(team =>
+      (!filter || team.status === filter) &&
+      ((team.team_name || "").toLowerCase().includes(search) ||
+       (team.owner_name || "").toLowerCase().includes(search))
+    );
+
+    message.textContent = filtered.length + " teams found.";
+    list.innerHTML = "";
+
+    filtered.forEach(team => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = team.team_name;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Owner: " + team.owner_name +
+        " | Status: " + team.status;
+
+      card.append(title, details);
+
+      ["approved", "rejected"].forEach(status => {
+        const btn = document.createElement("button");
+        btn.textContent = status === "approved" ? "Approve" : "Reject";
+
+        btn.onclick = async () => {
+          const { error } = await db
+            .from("teams")
+            .update({ status })
+            .eq("id", team.id);
+
+          if (error) alert(error.message);
+          else loadTeams();
+        };
+
+        card.appendChild(btn);
+      });
+
+      list.appendChild(card);
+    });
+  }
+
+  document.getElementById("teamSearch")
+    .addEventListener("input", renderTeams);
+
+  document.getElementById("teamFilter")
+    .addEventListener("change", renderTeams);
+
+  renderTeams();
+  }    
 checkAdmin();
 </script>
 
