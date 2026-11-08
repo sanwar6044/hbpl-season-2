@@ -181,7 +181,6 @@ async function loadPlayers() {
   const main = document.querySelector("main");
 
   let section = document.getElementById("playersSection");
-
   if (!section) {
     section = document.createElement("section");
     section.id = "playersSection";
@@ -190,8 +189,15 @@ async function loadPlayers() {
   }
 
   section.innerHTML = `
-    <h2>🏏 Player Registrations</h2>
-    <p id="playerMessage">Loading players...</p>
+    <h2>🏏 Player Management</h2>
+    <input id="playerSearch" placeholder="Search name or application number">
+    <select id="playerFilter">
+      <option value="">All Players</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <p id="playerMessage">Loading...</p>
     <div id="playersList"></div>
   `;
 
@@ -204,60 +210,85 @@ async function loadPlayers() {
   const list = document.getElementById("playersList");
 
   if (error) {
-    message.textContent = "Error: " + error.message;
+    message.textContent = error.message;
     return;
   }
 
-  message.textContent = data.length + " registrations found.";
+  function renderPlayers() {
+    const search = document.getElementById("playerSearch")
+      .value.toLowerCase();
 
-  if (data.length === 0) {
-    list.textContent = "No player registrations yet.";
-    return;
-  }
+    const filter = document.getElementById("playerFilter").value;
 
-  data.forEach(player => {
-    const card = document.createElement("div");
-    card.className = "card";
+    const filtered = data.filter(p =>
+      (!filter || p.registration_status === filter) &&
+      (
+        (p.player_name || "").toLowerCase().includes(search) ||
+        (p.application_no || "").toLowerCase().includes(search)
+      )
+    );
 
-    const title = document.createElement("h3");
-    title.textContent = player.player_name;
+    message.textContent = filtered.length + " players found.";
+    list.innerHTML = "";
 
-    const details = document.createElement("p");
-    details.textContent =
-      "Mobile: " + player.mobile +
-      " | Age: " + player.age +
-      " | Role: " + (player.role || "N/A") +
-      " | Status: " + player.registration_status;
+    filtered.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
 
-    card.append(title, details);
+      const title = document.createElement("h3");
+      title.textContent = p.player_name || "Unnamed Player";
 
-    ["approved", "rejected"].forEach(status => {
-      const button = document.createElement("button");
-      button.textContent =
-        status === "approved" ? "Approve" : "Reject";
+      const details = document.createElement("p");
+      details.textContent =
+        "Application: " + (p.application_no || "N/A") +
+        " | Mobile: " + (p.mobile || "N/A") +
+        " | Age: " + (p.age || "N/A") +
+        " | Role: " + (p.role || "N/A") +
+        " | Status: " + p.registration_status;
 
-      button.style.margin = "5px";
+      const view = document.createElement("button");
+      view.textContent = "View Details";
+      view.onclick = () => alert(
+        "Name: " + p.player_name +
+        "\nApplication: " + (p.application_no || "N/A") +
+        "\nMobile: " + p.mobile +
+        "\nAge: " + p.age +
+        "\nAddress: " + (p.address || "N/A") +
+        "\nRole: " + (p.role || "N/A")
+      );
 
-      button.onclick = async () => {
-        const { error } = await db
-          .from("registrations")
-          .update({ registration_status: status })
-          .eq("id", player.id);
+      card.append(title, details, view);
 
-        if (error) {
-          alert(error.message);
-        } else {
-          alert("Registration " + status);
-          loadPlayers();
-        }
-      };
+      ["approved", "rejected"].forEach(status => {
+        const btn = document.createElement("button");
+        btn.textContent = status === "approved" ? "Approve" : "Reject";
 
-      card.appendChild(button);
+        btn.onclick = async () => {
+          const { error } = await db
+            .from("registrations")
+            .update({ registration_status: status })
+            .eq("id", p.id);
+
+          if (error) alert(error.message);
+          else loadPlayers();
+        };
+
+        card.appendChild(btn);
+      });
+
+      list.appendChild(card);
     });
+  }
 
-    list.appendChild(card);
-  });
+  document.getElementById("playerSearch")
+    .addEventListener("input", renderPlayers);
+
+  document.getElementById("playerFilter")
+    .addEventListener("change", renderPlayers);
+
+  renderPlayers();
 }
+      
 checkAdmin();
 </script>
 
