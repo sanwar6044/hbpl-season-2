@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBPL Admin Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f5f9;
+  color:#10213d;
+}
+header{
+  background:#071b3b;
+  color:white;
+  padding:20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{margin:0}
+button{
+  background:#f4c542;
+  border:0;
+  padding:10px 16px;
+  border-radius:7px;
+  font-weight:bold;
+}
+main{padding:20px}
+.welcome{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+}
+.card{
+  background:white;
+  padding:22px;
+  border-radius:12px;
+  box-shadow:0 2px 8px #0001;
+}
+.card h3{margin-top:0}
+.card p{color:#667085}
+#status{padding:20px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🏏 HBPL Admin</h2>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<main>
+  <div class="welcome">
+    <h2>Welcome to HBPL Management</h2>
+    <p id="adminName">Checking admin access...</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>👥 Players</h3>
+      <p>Manage player registrations.</p>
+    </div>
+
+    <div class="card">
+      <h3>💰 Payments</h3>
+      <p>Verify payment records.</p>
+    </div>
+
+    <div class="card">
+      <h3>🏆 Teams</h3>
+      <p>Manage tournament teams.</p>
+    </div>
+
+    <div class="card">
+      <h3>🖼️ Posters</h3>
+      <p>Manage tournament posters.</p>
+    </div>
+
+    <div class="card">
+      <h3>📢 Notices & Events</h3>
+      <p>Publish announcements and events.</p>
+    </div>
+
+    <div class="card">
+      <h3>📅 Fixtures & Results</h3>
+      <p>Manage match schedules and results.</p>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Website Settings</h3>
+      <p>Manage tournament information.</p>
+    </div>
+
+    <div class="card">
+      <h3>👨‍💼 Admin Management</h3>
+      <p>Manage admin permissions.</p>
+    </div>
+  </div>
+
+  <p id="status"></p>
+</main>
+
+<script>
+const SUPABASE_URL =
+"https://izcmltsynxecmvwpvpwwf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_bsOWgTYMvizka3LfftaIYg_naJI0ukF";
+
+const db = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+async function checkAdmin(){
+
+  const {data:{user}} = await db.auth.getUser();
+
+  if(!user){
+    window.location.href="admin.html";
+    return;
+  }
+
+  const {data:profile,error} = await db
+    .from("profiles")
+    .select("full_name, role")
+    .eq("id",user.id)
+    .single();
+
+  if(error || !profile ||
+     !["super_admin","developer","admin"].includes(profile.role)){
+    document.getElementById("status").textContent =
+      "Access denied. Admin permission required.";
+    await db.auth.signOut();
+    return;
+  }
+
+  document.getElementById("adminName").textContent =
+    "Logged in as " + profile.full_name +
+    " (" + profile.role + ")";
+}
+
+document.getElementById("logoutBtn")
+.addEventListener("click",async()=>{
+  await db.auth.signOut();
+  window.location.href="admin.html";
+});
+
+checkAdmin();
+</script>
+
+</body>
+</html>
