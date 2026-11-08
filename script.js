@@ -116,3 +116,47 @@ if (message) {
   });
 
 }
+// TEAM REGISTRATION
+const teamForm = document.getElementById("teamForm");
+const teamMessage = document.getElementById("teamMessage");
+
+if (teamForm) {
+  teamForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const button = teamForm.querySelector('button[type="submit"]');
+    const data = Object.fromEntries(new FormData(teamForm).entries());
+
+    button.disabled = true;
+    teamMessage.textContent = "Submitting team registration...";
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/teams`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          team_name: data.team_name.trim(),
+          owner_name: data.owner_name.trim(),
+          status: "pending"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      teamMessage.textContent = "Team registration submitted successfully!";
+      teamForm.reset();
+
+    } catch (error) {
+      teamMessage.textContent = "Registration failed: " + error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
