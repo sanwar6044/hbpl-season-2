@@ -110,7 +110,7 @@ main{padding:20px}
     </div>
   </div>
 
-  <p id="status"></p>
+
 </main>
 
 <script>
@@ -125,34 +125,48 @@ const db = supabase.createClient(
   SUPABASE_KEY
 );
 
-async function checkAdmin(){
+async function checkAdmin() {
+  const status = document.getElementById("status");
 
-  const {data:{user}} = await db.auth.getUser();
+  const { data: { session }, error: sessionError } =
+    await db.auth.getSession();
 
-  if(!user){
-    window.location.href="admin.html";
+  if (sessionError) {
+    status.textContent = "Session error: " + sessionError.message;
     return;
   }
 
-  const {data:profile,error} = await db
+  if (!session) {
+    status.textContent = "No session found. Login session save nahi hui.";
+    return;
+  }
+
+  status.textContent = "Session found. Checking profile...";
+
+  const { data: profile, error: profileError } = await db
     .from("profiles")
     .select("full_name, role")
-    .eq("id",user.id)
+    .eq("id", session.user.id)
     .single();
 
-  if(error || !profile ||
-     !["super_admin","developer","admin"].includes(profile.role)){
-    document.getElementById("status").textContent =
-      "Access denied. Admin permission required.";
-    await db.auth.signOut();
+  if (profileError) {
+    status.textContent = "Profile error: " + profileError.message;
+    return;
+  }
+
+  if (!profile ||
+      !["super_admin", "developer", "admin"].includes(profile.role)) {
+    status.textContent = "Admin permission nahi mili.";
     return;
   }
 
   document.getElementById("adminName").textContent =
-    "Logged in as " + profile.full_name +
-    " (" + profile.role + ")";
+    "Logged in as " + profile.full_name + " (" + profile.role + ")";
+
+  status.textContent = "Admin access verified!";
   loadPlayers();
 }
+
 
 document.getElementById("logoutBtn")
 .addEventListener("click",async()=>{
