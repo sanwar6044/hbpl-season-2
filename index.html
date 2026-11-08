@@ -118,6 +118,74 @@
     </form>
   </div>
 </section>
+    <!-- PAYMENT SECTION -->
+<section class="section" id="payment">
+
+  <div class="section-label">05 / PAYMENT</div>
+
+  <div class="section-heading">
+    <h2>💳 Tournament <em>Payment</em></h2>
+    <p>Pay using QR code and submit your UTR number.</p>
+  </div>
+
+  <div class="registration-grid">
+
+    <div>
+      <h2>Scan & Pay</h2>
+
+      <div class="fee-banner">
+        <small>OFFICIAL PAYMENT QR</small>
+        <img
+          src="/mahfooz-payment-qr.png"
+          alt="HBPL Payment QR Code"
+          style="width:100%;max-width:320px;display:block;margin:15px auto;"
+        >
+        <p>UPI ID: amzn0013351097@apl</p>
+      </div>
+    </div>
+
+    <div>
+      <h2>Submit Payment Details</h2>
+
+      <form id="paymentForm" class="reg-form">
+
+        <label>Payment Type
+          <select id="paymentType" required>
+            <option value="">Select Payment Type</option>
+            <option value="player">Player Registration - ₹150</option>
+            <option value="team">Team Registration - ₹7,000</option>
+            <option value="auction">Auction Money - ₹25,000</option>
+          </select>
+        </label>
+
+        <label>Amount
+          <input id="paymentAmount" type="text"
+            placeholder="Select payment type" readonly>
+        </label>
+
+        <label>UTR / Transaction Number
+          <input id="utrNumber" type="text"
+            placeholder="Enter UTR number"
+            minlength="8" maxlength="30" required>
+        </label>
+
+        <button class="btn btn-gold full" type="submit">
+          Submit Payment
+        </button>
+
+        <div id="paymentMessage"
+          class="form-message full"
+          aria-live="polite"></div>
+
+      </form>
+    </div>
+
+  </div>
+
+  <p>Payment will be verified manually by the tournament organiser.</p>
+
+</section>
+<!-- END PAYMENT SECTION -->
 <!-- END TEAM REGISTRATION -->
     <section class="section fixtures" id="fixtures">
       <div class="section-label">04 / MATCH CENTRE</div>
