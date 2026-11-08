@@ -160,3 +160,72 @@ if (teamForm) {
     }
   });
 }
+// PAYMENT FORM
+const paymentForm = document.getElementById("paymentForm");
+
+if (paymentForm) {
+  const paymentType = document.getElementById("paymentType");
+  const paymentAmount = document.getElementById("paymentAmount");
+  const utrNumber = document.getElementById("utrNumber");
+  const paymentMessage = document.getElementById("paymentMessage");
+
+  const amounts = {
+    player: 150,
+    team: 7000,
+    auction: 25000
+  };
+
+  paymentType.addEventListener("change", () => {
+    paymentAmount.value = amounts[paymentType.value] || "";
+  });
+
+  paymentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const type = paymentType.value;
+    const utr = utrNumber.value.trim();
+    const amount = amounts[type];
+
+    if (!amount || utr.length < 8 || utr.length > 30) {
+      paymentMessage.textContent = "Please enter valid payment details.";
+      return;
+    }
+
+    const button = paymentForm.querySelector('button[type="submit"]');
+    button.disabled = true;
+    paymentMessage.textContent = "Submitting payment...";
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          payment_type: type,
+          amount: amount,
+          utr_number: utr,
+          payment_status: "pending"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      paymentMessage.textContent =
+        "Payment details submitted! Verification is pending.";
+
+      paymentForm.reset();
+      paymentAmount.value = "";
+
+    } catch (error) {
+      paymentMessage.textContent = "Payment failed: " + error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
