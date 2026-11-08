@@ -150,6 +150,7 @@ async function checkAdmin(){
   document.getElementById("adminName").textContent =
     "Logged in as " + profile.full_name +
     " (" + profile.role + ")";
+  loadPlayers();
 }
 
 document.getElementById("logoutBtn")
@@ -157,7 +158,87 @@ document.getElementById("logoutBtn")
   await db.auth.signOut();
   window.location.href="admin.html";
 });
+async function loadPlayers() {
+  const main = document.querySelector("main");
 
+  let section = document.getElementById("playersSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "playersSection";
+    section.className = "card";
+    main.appendChild(section);
+  }
+
+  section.innerHTML = `
+    <h2>🏏 Player Registrations</h2>
+    <p id="playerMessage">Loading players...</p>
+    <div id="playersList"></div>
+  `;
+
+  const { data, error } = await db
+    .from("registrations")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const message = document.getElementById("playerMessage");
+  const list = document.getElementById("playersList");
+
+  if (error) {
+    message.textContent = "Error: " + error.message;
+    return;
+  }
+
+  message.textContent = data.length + " registrations found.";
+
+  if (data.length === 0) {
+    list.textContent = "No player registrations yet.";
+    return;
+  }
+
+  data.forEach(player => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const title = document.createElement("h3");
+    title.textContent = player.player_name;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Mobile: " + player.mobile +
+      " | Age: " + player.age +
+      " | Role: " + (player.role || "N/A") +
+      " | Status: " + player.registration_status;
+
+    card.append(title, details);
+
+    ["approved", "rejected"].forEach(status => {
+      const button = document.createElement("button");
+      button.textContent =
+        status === "approved" ? "Approve" : "Reject";
+
+      button.style.margin = "5px";
+
+      button.onclick = async () => {
+        const { error } = await db
+          .from("registrations")
+          .update({ registration_status: status })
+          .eq("id", player.id);
+
+        if (error) {
+          alert(error.message);
+        } else {
+          alert("Registration " + status);
+          loadPlayers();
+        }
+      };
+
+      card.appendChild(button);
+    });
+
+    list.appendChild(card);
+  });
+}
 checkAdmin();
 </script>
 
