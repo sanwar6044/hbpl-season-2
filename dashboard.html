@@ -120,10 +120,14 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
 "sb_publishable_bsOWgTYMvizka3LfftaIYg_naJI0ukF";
 
-const db = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: "hbpl-auth-session"
+  }
+});
 
 async function checkAdmin() {
   const status = document.getElementById("status");
