@@ -109,6 +109,9 @@ loginForm.addEventListener("submit", async function(event) {
         message.textContent = "Login failed: " + error.message;
     } else {
         message.textContent = "Login successful!";
+      setTimeout(() => {
+    window.location.href = "dashboard.html";
+}, 1000);
     }
 loginBtn.disabled = false;
 });
