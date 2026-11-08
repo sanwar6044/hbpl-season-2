@@ -351,8 +351,17 @@ async function loadPlayers() {
         "Owner: " + team.owner_name +
         " | Status: " + team.status;
 
-      card.append(title, details);
+      
+const view = document.createElement("button");
+view.textContent = "View Details";
 
+view.onclick = () => alert(
+  "Team Name: " + team.team_name +
+  "\nOwner: " + team.owner_name +
+  "\nStatus: " + team.status +
+  "\nCreated: " + team.created_at
+);
+      card.append(title, details, view);
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
         btn.textContent = status === "approved" ? "Approve" : "Reject";
