@@ -2,8 +2,8 @@
 // HBPL SEASON 2 - REAL DATABASE VERSION
 // ======================================
 
-const SUPABASE_URL =
-  "https://izcmltsynxecmvvvpwwf.supabase.co";
+
+  const SUPABASE_URL = "https://izcmltsynxecmvwpvpwf.supabase.co";
 
 const SUPABASE_KEY =
   "sb_publishable_bsOWgTYMvizka3LfftaIYg_naJI0ukF";
