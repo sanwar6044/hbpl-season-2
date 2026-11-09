@@ -170,13 +170,81 @@ async function checkAdmin() {
   status.textContent = "Admin access verified!";
   loadPlayers();
 loadTeams();
+loadPayments();
 }
 
 document.getElementById("logoutBtn")
 .addEventListener("click",async()=>{
   await db.auth.signOut();
   window.location.href="admin.html";
-});
+}); // PAYMENT MANAGEMENT
+async function loadPayments() {
+  const message = document.getElementById("paymentMessage");
+  const list = document.getElementById("paymentList");
+  const filter = document.getElementById("paymentFilter");
+
+  const { data, error } = await db
+    .from("payments")
+    .select("id,payment_type,amount,utr_number,payment_status,receipt_url,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    message.textContent = "Error: " + error.message;
+    return;
+  }
+
+  function renderPayments() {
+    list.innerHTML = "";
+
+    const selected = filter.value;
+    const records = data.filter(payment =>
+      selected === "all" || payment.payment_status === selected
+    );
+
+    message.textContent = records.length + " payments found.";
+
+    records.forEach(payment => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = payment.payment_type;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Amount: ₹" + payment.amount +
+        " | UTR: " + payment.utr_number +
+        " | Status: " + payment.payment_status;
+
+      card.append(title, details);
+
+      if (payment.receipt_url) {
+        const button = document.createElement("button");
+        button.textContent = "View Private Receipt";
+
+        button.onclick = async () => {
+          const { data: file, error } = await db.storage
+            .from("payment-receipts")
+            .createSignedUrl(payment.receipt_url, 60);
+
+          if (error) {
+            alert("Receipt error: " + error.message);
+            return;
+          }
+
+          window.open(file.signedUrl, "_blank");
+        };
+
+        card.appendChild(button);
+      }
+
+      list.appendChild(card);
+    });
+  }
+
+  filter.addEventListener("change", renderPayments);
+  renderPayments();
+}
 async function loadPlayers() {
   const main = document.querySelector("main");
 
