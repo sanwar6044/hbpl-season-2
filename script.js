@@ -68,33 +68,35 @@ if (form) {
     try {
 
       const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/registrations`,
-        {
-          method: "POST",
+  `${SUPABASE_URL}/rest/v1/rpc/register_player`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      p_player_name: registration.player_name,
+      p_mobile: registration.mobile,
+      p_age: registration.age,
+      p_role: registration.role,
+      p_address: registration.address
+    })
+  }
+);
 
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`,
-            "Prefer": "return=representation"
-          },
-
-          body: JSON.stringify(registration)
-        }
-      );
-
-      if (!response.ok) {
+if (!response.ok) {
   const errorText = await response.text();
   throw new Error(errorText || "Registration failed");
 }
 
 const savedRows = await response.json();
-const savedRegistration = savedRows[0];
+const savedRegistration = savedRows?.[0];
 
 if (!savedRegistration?.application_no) {
   throw new Error("Application ID was not returned.");
 }
-
 if (message) {
   message.textContent =
     "Registration successful! Your Application ID: " +
