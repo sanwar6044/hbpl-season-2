@@ -159,73 +159,111 @@ if (teamForm) {
       button.disabled = false;
     }
   });
-}
+} 
 // PAYMENT FORM
 const paymentForm = document.getElementById("paymentForm");
 
 if (paymentForm) {
-  const paymentType = document.getElementById("paymentType");
-  const paymentAmount = document.getElementById("paymentAmount");
-  const utrNumber = document.getElementById("utrNumber");
-  const paymentMessage = document.getElementById("paymentMessage");
+    const paymentType = document.getElementById("paymentType");
+    const paymentAmount = document.getElementById("paymentAmount");
+    const utrNumber = document.getElementById("utrNumber");
+    const paymentMessage = document.getElementById("paymentMessage");
 
-  const amounts = {
-    player: 150,
-    team: 7000,
-    auction: 25000
-  };
+    const receiptFile = document.getElementById("receiptFile");
 
-  paymentType.addEventListener("change", () => {
-    paymentAmount.value = amounts[paymentType.value] || "";
-  });
+    const amounts = {
+        player: 150,
+        team: 7000,
+        auction: 25000
+    };
 
-  paymentForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+    paymentType.addEventListener("change", () => {
+        paymentAmount.value = amounts[paymentType.value] || "";
+    });
 
-    const type = paymentType.value;
-    const utr = utrNumber.value.trim();
-    const amount = amounts[type];
+    paymentForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    if (!amount || utr.length < 8 || utr.length > 30) {
-      paymentMessage.textContent = "Please enter valid payment details.";
-      return;
-    }
+        const type = paymentType.value;
+        const utr = utrNumber.value.trim();
+        const amount = amounts[type];
+        const file = receiptFile.files[0];
 
-    const button = paymentForm.querySelector('button[type="submit"]');
-    button.disabled = true;
-    paymentMessage.textContent = "Submitting payment...";
+        if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
+            paymentMessage.textContent = "Please enter valid payment details and upload screenshot.";
+            return;
+        }
 
-    try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({
-          payment_type: type,
-          amount: amount,
-          utr_number: utr,
-          payment_status: "pending"
-        })
-      });
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+            paymentMessage.textContent = "Only JPG, PNG or WebP images up to 5 MB are allowed.";
+            return;
+        }
 
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
+        const button = paymentForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        paymentMessage.textContent = "Uploading screenshot...";
 
-      paymentMessage.textContent =
-        "Payment details submitted! Verification is pending.";
+        let uploadedPath = "";
 
-      paymentForm.reset();
-      paymentAmount.value = "";
+        try {
+            const extension = file.type === "image/jpeg" ? "jpg" :
+                              file.type === "image/png" ? "png" : "webp";
 
-    } catch (error) {
-      paymentMessage.textContent = "Payment failed: " + error.message;
-    } finally {
-      button.disabled = false;
-    }
-  });
+            const filePath = `${crypto.randomUUID()}.${extension}`;
+
+            const uploadResponse = await fetch(
+                `${SUPABASE_URL}/storage/v1/object/payment-receipts/${filePath}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                        "Content-Type": file.type,
+                        "x-upsert": "false"
+                    },
+                    body: file
+                }
+            );
+
+            if (!uploadResponse.ok) {
+                throw new Error("Screenshot upload failed: " + await uploadResponse.text());
+            }
+
+            uploadedPath = filePath;
+            paymentMessage.textContent = "Saving payment details...";
+
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({
+                    payment_type: type,
+                    amount: amount,
+                    utr_number: utr,
+                    receipt_url: uploadedPath,
+                    payment_status: "pending"
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("Payment record failed: " + await response.text());
+            }
+
+            paymentMessage.textContent =
+                "Payment submitted successfully! Verification is pending.";
+
+            paymentForm.reset();
+            paymentAmount.value = "";
+
+        } catch (error) {
+            paymentMessage.textContent = "Error: " + error.message;
+        } finally {
+            button.disabled = false;
+        }
+    });
 }
+      
