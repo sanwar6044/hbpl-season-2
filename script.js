@@ -172,10 +172,10 @@ if (paymentForm) {
     const receiptFile = document.getElementById("receiptFile");
 
     const amounts = {
-        player: 150,
-        team: 7000,
-        auction: 25000
-    };
+  player_registration: 150,
+  team_entry: 7000,
+  auction_money: 25000
+};
 
     paymentType.addEventListener("change", () => {
         paymentAmount.value = amounts[paymentType.value] || "";
