@@ -83,7 +83,28 @@
         </form>
       </div>
     </section>
-<!-- TEAM REGISTRATION -->
+<!-- TEAM REGISTRATION --> 
+    <!-- PLAYER STATUS CHECK -->
+<section class="section" id="player-status">
+  <div class="section-label">PLAYER SERVICES</div>
+  <div class="section-heading">
+    <h2>Check Player <em>Status</em></h2>
+    <p>Enter your application number and registered mobile number.</p>
+  </div>
+
+  <form id="playerStatusForm" class="reg-form">
+    <label>Application Number
+      <input type="text" id="statusApplicationNo" placeholder="Enter application number" required>
+    </label>
+
+    <label>Registered Mobile Number
+      <input type="tel" id="statusMobile" placeholder="Enter registered mobile number" required>
+    </label>
+
+    <button class="btn btn-gold full" type="submit">Check Status</button>
+    <div id="playerStatusMessage" class="form-message full" aria-live="polite"></div>
+  </form>
+</section>
 <section class="registration section" id="team-registration">
   <div class="section-label">04 / JOIN THE TOURNAMENT</div>
   <div class="section-heading">
