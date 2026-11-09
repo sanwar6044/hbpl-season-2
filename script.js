@@ -203,10 +203,25 @@ const registeredMobile = document.getElementById("paymentRegisteredMobile").valu
         const amount = amounts[type];
         const file = receiptFile.files[0];
 
-        if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
-            paymentMessage.textContent = "Please enter valid payment details and upload screenshot.";
-            return;
-        }
+      if (
+  type === "player_registration" &&
+  (
+    !applicationNo ||
+    !registeredMobile ||
+    !/^HBPL2-\d{4}$/.test(applicationNo) ||
+    !/^[0-9]{10}$/.test(registeredMobile)
+  )
+) {
+  paymentMessage.textContent =
+    "Please enter valid Application Number and registered mobile number.";
+  return;
+}
+
+if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
+  paymentMessage.textContent =
+    "Please enter valid payment details and upload screenshot.";
+  return;
+}
 
         if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
             paymentMessage.textContent = "Only JPG, PNG or WebP images up to 5 MB are allowed.";
