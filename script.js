@@ -88,9 +88,18 @@ if (form) {
   throw new Error(errorText || "Registration failed");
 }
 
+const savedRows = await response.json();
+const savedRegistration = savedRows[0];
+
+if (!savedRegistration?.application_no) {
+  throw new Error("Application ID was not returned.");
+}
+
 if (message) {
   message.textContent =
-    "Registration submitted successfully!";
+    "Registration successful! Your Application ID: " +
+    savedRegistration.application_no +
+    ". Save this ID for status checking.";
 }
 
 
