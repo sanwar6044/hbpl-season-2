@@ -266,4 +266,63 @@ if (paymentForm) {
         }
     });
 }
-      
+      // PLAYER STATUS CHECK
+const playerStatusForm = document.getElementById("playerStatusForm");
+const playerStatusMessage = document.getElementById("playerStatusMessage");
+
+if (playerStatusForm) {
+  playerStatusForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const applicationNo = document
+      .getElementById("statusApplicationNo").value.trim();
+
+    const mobile = document
+      .getElementById("statusMobile").value.trim();
+
+    const button = playerStatusForm.querySelector('button[type="submit"]');
+
+    button.disabled = true;
+    playerStatusMessage.textContent = "Checking your application...";
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/rpc/check_player_status`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            p_application_no: applicationNo,
+            p_mobile: mobile
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Unable to check status. Please try again.");
+      }
+
+      const data = await response.json();
+
+      if (!data || data.length === 0) {
+        playerStatusMessage.textContent =
+          "No application found. Please check your details.";
+      } else {
+        const player = data[0];
+        const status = player.registration_status.toUpperCase();
+
+        playerStatusMessage.textContent =
+          `Name: ${player.player_name} | Application: ${player.application_no} | Status: ${status}`;
+      }
+
+    } catch (error) {
+      playerStatusMessage.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
