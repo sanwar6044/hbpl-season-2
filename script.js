@@ -76,7 +76,7 @@ if (form) {
             "Content-Type": "application/json",
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${SUPABASE_KEY}`,
-            "Prefer": "return=minimal"
+            "Prefer": "return=representation"
           },
 
           body: JSON.stringify(registration)
