@@ -196,6 +196,9 @@ if (paymentForm) {
         event.preventDefault();
 
         const type = paymentType.value;
+
+      const applicationNo = document.getElementById("paymentApplicationNo").value.trim();
+const registeredMobile = document.getElementById("paymentRegisteredMobile").value.trim();
         const utr = utrNumber.value.trim();
         const amount = amounts[type];
         const file = receiptFile.files[0];
