@@ -260,6 +260,31 @@ if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
 
             uploadedPath = filePath;
             paymentMessage.textContent = "Saving payment details...";
+          const lookupResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/rpc/get_player_registration_id`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      p_application_no: applicationNo,
+      p_mobile: registeredMobile
+    })
+  }
+);
+
+if (!lookupResponse.ok) {
+  throw new Error("Player registration lookup failed.");
+}
+
+const registrationId = await lookupResponse.json();
+
+if (type === "player_registration" && !registrationId) {
+  throw new Error("Player registration not found.");
+}
 
             const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
                 method: "POST",
@@ -270,12 +295,13 @@ if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
                     "Prefer": "return=minimal"
                 },
                 body: JSON.stringify({
-                    payment_type: type,
-                    amount: amount,
-                    utr_number: utr,
-                    receipt_url: uploadedPath,
-                    payment_status: "pending"
-                })
+  registration_id: type === "player_registration" ? registrationId : null,
+  payment_type: type,
+  amount: amount,
+  utr_number: utr,
+  receipt_url: uploadedPath,
+  payment_status: "pending"
+})
             });
 
             if (!response.ok) {
