@@ -380,27 +380,62 @@ if (playerStatusForm) {
       button.disabled = false;
     }
   });
-  async function loadPublicWebsitePeople() {
+  
+async function loadPublicWebsitePeople() {
   const box = document.getElementById("publicWebsitePeople");
-  const { data, error } = await db
-    .from("website_people")
-    .select("full_name, designation, photo_url")
-    .eq("is_active", true)
-    .order("sort_order");
+  if (!box) return;
 
-  if (error) {
-    box.textContent = "Unable to load members.";
-    return;
+  box.textContent = "Loading members...";
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/website_people?select=full_name,designation,photo_url&is_active=eq.true&order=sort_order.asc`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error("Loading failed: " + response.status);
+
+    const data = await response.json();
+    box.innerHTML = "";
+
+    if (!data.length) {
+      box.textContent = "No team members added yet.";
+      return;
+    }
+
+    data.forEach(person => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const name = document.createElement("h3");
+      name.textContent = person.full_name;
+
+      const role = document.createElement("p");
+      role.textContent = person.designation;
+
+      card.append(name, role);
+
+      if (person.photo_url) {
+        const img = document.createElement("img");
+        img.src = person.photo_url;
+        img.width = 160;
+        img.alt = person.full_name;
+        card.appendChild(img);
+      }
+
+      box.appendChild(card);
+    });
+
+  } catch (error) {
+    box.textContent = "Unable to load members: " + error.message;
   }
-
-  box.innerHTML = data.map(p => `
-    <div class="card">
-      <h3>${p.full_name}</h3>
-      <p>${p.designation}</p>
-      ${p.photo_url ? `<img src="${p.photo_url}" width="160">` : ""}
-    </div>
-  `).join("");
 }
 
 loadPublicWebsitePeople();
+  
 }
