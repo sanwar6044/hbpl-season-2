@@ -380,4 +380,27 @@ if (playerStatusForm) {
       button.disabled = false;
     }
   });
+  async function loadPublicWebsitePeople() {
+  const box = document.getElementById("publicWebsitePeople");
+  const { data, error } = await db
+    .from("website_people")
+    .select("full_name, designation, photo_url")
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (error) {
+    box.textContent = "Unable to load members.";
+    return;
+  }
+
+  box.innerHTML = data.map(p => `
+    <div class="card">
+      <h3>${p.full_name}</h3>
+      <p>${p.designation}</p>
+      ${p.photo_url ? `<img src="${p.photo_url}" width="160">` : ""}
+    </div>
+  `).join("");
+}
+
+loadPublicWebsitePeople();
 }
