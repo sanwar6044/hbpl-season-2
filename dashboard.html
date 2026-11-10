@@ -246,7 +246,28 @@ async function loadPayments() {
 
         card.appendChild(button);
       }
+if (payment.payment_status === "pending") {
+  const actions = document.createElement("div");
 
+  const approveBtn = document.createElement("button");
+  approveBtn.textContent = "Approve Payment";
+
+  approveBtn.onclick = () => updatePaymentStatus(
+    payment.id,
+    "approved"
+  );
+
+  const rejectBtn = document.createElement("button");
+  rejectBtn.textContent = "Reject Payment";
+
+  rejectBtn.onclick = () => updatePaymentStatus(
+    payment.id,
+    "rejected"
+  );
+
+  actions.append(approveBtn, rejectBtn);
+  card.appendChild(actions);
+}
       list.appendChild(card);
     });
   }
@@ -254,6 +275,39 @@ async function loadPayments() {
   filter.addEventListener("change", renderPayments);
   renderPayments();
 }
+  async function updatePaymentStatus(paymentId, newStatus) {
+  if (!["approved", "rejected"].includes(newStatus)) return;
+
+  const confirmed = confirm(
+    `Are you sure you want to ${newStatus} this payment?`
+  );
+
+  if (!confirmed) return;
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) {
+    alert("Admin login required.");
+    return;
+  }
+
+  const { error } = await db
+    .from("payments")
+    .update({
+      payment_status: newStatus,
+      verified_by: user.id,
+      verified_at: new Date().toISOString()
+    })
+    .eq("id", paymentId);
+
+  if (error) {
+    alert("Payment update failed: " + error.message);
+    return;
+  }
+
+  alert("Payment " + newStatus + " successfully!");
+  await loadPayments();
+  }
 async function loadPlayers() {
   const main = document.querySelector("main");
 
