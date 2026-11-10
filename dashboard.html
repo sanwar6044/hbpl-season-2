@@ -314,10 +314,12 @@ if (payment.payment_status === "pending") {
   alert("Payment " + newStatus + " successfully!");
   await loadPayments();
   }
+
 async function loadPlayers() {
   const main = document.querySelector("main");
 
   let section = document.getElementById("playersSection");
+
   if (!section) {
     section = document.createElement("section");
     section.id = "playersSection";
@@ -327,50 +329,106 @@ async function loadPlayers() {
 
   section.innerHTML = `
     <h2>🏏 Player Management</h2>
-    <input id="playerSearch" placeholder="Search name or application number">
-    <select id="playerFilter">
+
+    <div class="grid">
+      <div class="card">
+        <h3>Total Registered</h3>
+        <h2 id="totalPlayers">0</h2>
+      </div>
+      <div class="card">
+        <h3>Pending</h3>
+        <h2 id="pendingPlayers">0</h2>
+      </div>
+      <div class="card">
+        <h3>Approved</h3>
+        <h2 id="approvedPlayers">0</h2>
+      </div>
+      <div class="card">
+        <h3>Rejected</h3>
+        <h2 id="rejectedPlayers">0</h2>
+      </div>
+    </div>
+
+    <input
+      id="playerSearch"
+      placeholder="Search name, application number or mobile"
+      style="width:100%;padding:12px;margin:12px 0;"
+    >
+
+    <select id="playerFilter" style="padding:10px;">
       <option value="">All Players</option>
       <option value="pending">Pending</option>
       <option value="approved">Approved</option>
       <option value="rejected">Rejected</option>
     </select>
-    <p id="playerMessage">Loading...</p>
+
+    <button id="refreshPlayers" style="margin:10px;">
+      🔄 Refresh
+    </button>
+
+    <p id="playerMessage">Loading players...</p>
     <div id="playersList"></div>
   `;
+
+  const message = document.getElementById("playerMessage");
+  const list = document.getElementById("playersList");
 
   const { data, error } = await db
     .from("registrations")
     .select("*")
     .order("created_at", { ascending: false });
 
-  const message = document.getElementById("playerMessage");
-  const list = document.getElementById("playersList");
-
   if (error) {
-    message.textContent = error.message;
+    message.textContent = "Error: " + error.message;
     return;
   }
 
+  // Registration counts
+  document.getElementById("totalPlayers").textContent =
+    data.length;
+
+  document.getElementById("pendingPlayers").textContent =
+    data.filter(p => p.registration_status === "pending").length;
+
+  document.getElementById("approvedPlayers").textContent =
+    data.filter(p => p.registration_status === "approved").length;
+
+  document.getElementById("rejectedPlayers").textContent =
+    data.filter(p => p.registration_status === "rejected").length;
+
   function renderPlayers() {
     const search = document.getElementById("playerSearch")
-      .value.toLowerCase();
+      .value.trim().toLowerCase();
 
     const filter = document.getElementById("playerFilter").value;
 
-    const filtered = data.filter(p =>
-      (!filter || p.registration_status === filter) &&
-      (
-        (p.player_name || "").toLowerCase().includes(search) ||
-        (p.application_no || "").toLowerCase().includes(search)
-      )
-    );
+    const filtered = data.filter(p => {
+      const name = (p.player_name || "").toLowerCase();
+      const application = (p.application_no || "").toLowerCase();
+      const mobile = (p.mobile || "").toLowerCase();
+
+      return (
+        (!filter || p.registration_status === filter) &&
+        (
+          name.includes(search) ||
+          application.includes(search) ||
+          mobile.includes(search)
+        )
+      );
+    });
 
     message.textContent = filtered.length + " players found.";
     list.innerHTML = "";
 
+    if (!filtered.length) {
+      list.textContent = "No players found.";
+      return;
+    }
+
     filtered.forEach(p => {
       const card = document.createElement("div");
       card.className = "card";
+      card.style.marginTop = "12px";
 
       const title = document.createElement("h3");
       title.textContent = p.player_name || "Unnamed Player";
@@ -381,33 +439,53 @@ async function loadPlayers() {
         " | Mobile: " + (p.mobile || "N/A") +
         " | Age: " + (p.age || "N/A") +
         " | Role: " + (p.role || "N/A") +
-        " | Status: " + p.registration_status;
+        " | Status: " + (p.registration_status || "N/A");
 
       const view = document.createElement("button");
       view.textContent = "View Details";
-      view.onclick = () => alert(
-        "Name: " + p.player_name +
-        "\nApplication: " + (p.application_no || "N/A") +
-        "\nMobile: " + p.mobile +
-        "\nAge: " + p.age +
-        "\nAddress: " + (p.address || "N/A") +
-        "\nRole: " + (p.role || "N/A")
-      );
+
+      view.onclick = () => {
+        alert(
+          "Name: " + (p.player_name || "N/A") +
+          "\nApplication: " + (p.application_no || "N/A") +
+          "\nMobile: " + (p.mobile || "N/A") +
+          "\nAge: " + (p.age || "N/A") +
+          "\nAddress: " + (p.address || "N/A") +
+          "\nRole: " + (p.role || "N/A") +
+          "\nStatus: " + (p.registration_status || "N/A")
+        );
+      };
 
       card.append(title, details, view);
 
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
-        btn.textContent = status === "approved" ? "Approve" : "Reject";
+
+        btn.textContent =
+          status === "approved" ? "Approve" : "Reject";
+
+        btn.style.margin = "8px";
 
         btn.onclick = async () => {
+          if (!confirm("Change player status to " + status + "?")) {
+            return;
+          }
+
+          btn.disabled = true;
+
           const { error } = await db
             .from("registrations")
             .update({ registration_status: status })
             .eq("id", p.id);
 
-          if (error) alert(error.message);
-          else loadPlayers();
+          if (error) {
+            alert("Update failed: " + error.message);
+            btn.disabled = false;
+            return;
+          }
+
+          alert("Player status updated successfully!");
+          await loadPlayers();
         };
 
         card.appendChild(btn);
@@ -423,8 +501,12 @@ async function loadPlayers() {
   document.getElementById("playerFilter")
     .addEventListener("change", renderPlayers);
 
+  document.getElementById("refreshPlayers")
+    .addEventListener("click", loadPlayers);
+
   renderPlayers();
-}
+    }
+  
   async function loadTeams() {
   const main = document.querySelector("main");
 
