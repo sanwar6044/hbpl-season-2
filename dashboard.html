@@ -116,6 +116,11 @@ main{padding:20px}
     <div class="card">
       <h3>👨‍💼 Admin Management</h3>
       <p>Manage admin permissions.</p>
+    </div><div class="card">
+  <h2>⚙️ Website Management</h2>
+  <p>Manage President, Owner, Captain, Organisers and Sponsors.</p>
+  <div id="websitePeopleMessage">Loading...</div>
+  <div id="websitePeopleList"></div>
     </div>
   </div>
 
@@ -180,6 +185,7 @@ async function checkAdmin() {
   loadPlayers();
 loadTeams();
 loadPayments();
+  loadWebsitePeople();
 }
 
 document.getElementById("logoutBtn")
@@ -521,7 +527,116 @@ view.onclick = () => alert(
     .addEventListener("change", renderTeams);
 
   renderTeams();
-  }    
+  }
+  async function loadWebsitePeople() {
+  const message = document.getElementById("websitePeopleMessage");
+  const list = document.getElementById("websitePeopleList");
+
+  list.innerHTML = `
+    <h3>Add Website Member</h3>
+    <input id="wpName" placeholder="Full Name">
+    <input id="wpDesignation" placeholder="Designation">
+    <input id="wpPhoto" type="file" accept="image/*">
+    <button id="wpSave">Save Member</button>
+  `;
+
+  const { data, error } = await db
+    .from("website_people")
+    .select("*")
+    .order("sort_order");
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+  list.innerHTML += "<h3>Website Members</h3>";
+
+  data.forEach(person => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h3>${person.full_name}</h3>
+      <p>${person.designation}</p>
+      ${person.photo_url ? `<img src="${person.photo_url}" width="100">` : ""}
+      <button>Edit</button>
+      <button>Delete</button>
+    `;
+
+    const buttons = card.querySelectorAll("button");
+
+    buttons[0].onclick = () => {
+      document.getElementById("wpName").value = person.full_name;
+      document.getElementById("wpDesignation").value = person.designation;
+      document.getElementById("wpSave").dataset.id = person.id;
+    };
+
+    buttons[1].onclick = async () => {
+      if (!confirm("Delete this member?")) return;
+      const { error } = await db
+        .from("website_people")
+        .delete()
+        .eq("id", person.id);
+
+      if (error) alert(error.message);
+      else loadWebsitePeople();
+    };
+
+    list.appendChild(card);
+  });
+
+  document.getElementById("wpSave").onclick = async () => {
+    const name = document.getElementById("wpName").value.trim();
+    const designation = document.getElementById("wpDesignation").value.trim();
+    const file = document.getElementById("wpPhoto").files[0];
+    const id = document.getElementById("wpSave").dataset.id;
+
+    if (!name || !designation) {
+      alert("Name and designation required.");
+      return;
+    }
+
+    let photo_url = id
+      ? data.find(p => p.id === id)?.photo_url
+      : null;
+
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+      const { error: uploadError } = await db.storage
+        .from("website-people")
+        .upload(path, file);
+
+      if (uploadError) {
+        alert(uploadError.message);
+        return;
+      }
+
+      photo_url = db.storage
+        .from("website-people")
+        .getPublicUrl(path).data.publicUrl;
+    }
+
+    const payload = {
+      full_name: name,
+      designation,
+      photo_url
+    };
+
+    const result = id
+      ? await db.from("website_people").update(payload).eq("id", id)
+      : await db.from("website_people").insert(payload);
+
+    if (result.error) {
+      alert(result.error.message);
+      return;
+    }
+
+    alert("Member saved successfully!");
+    loadWebsitePeople();
+  };
+  }
 checkAdmin();
 </script>
 
