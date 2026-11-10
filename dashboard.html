@@ -254,7 +254,7 @@ if (payment.payment_status === "pending") {
 
   approveBtn.onclick = () => updatePaymentStatus(
     payment.id,
-    "approved"
+    "verified"
   );
 
   const rejectBtn = document.createElement("button");
@@ -276,7 +276,7 @@ if (payment.payment_status === "pending") {
   renderPayments();
 }
   async function updatePaymentStatus(paymentId, newStatus) {
-  if (!["approved", "rejected"].includes(newStatus)) return;
+  if (!["verified", "rejected"].includes(newStatus)) return;
 
   const confirmed = confirm(
     `Are you sure you want to ${newStatus} this payment?`
