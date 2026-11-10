@@ -1,8 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBPL Admin Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f5f9;
+  color:#10213d;
+}
+header{
+  background:#071b3b;
+  color:white;
+  padding:20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{margin:0}
+button{
+  background:#f4c542;
+  border:0;
+  padding:10px 16px;
+  border-radius:7px;
+  font-weight:bold;
+}
+main{padding:20px}
+.welcome{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+}
+.card{
+  background:white;
+  padding:22px;
+  border-radius:12px;
+  box-shadow:0 2px 8px #0001;
+}
+.card h3{margin-top:0}
+.card p{color:#667085}
+#status{padding:20px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🏏 HBPL Admin</h2>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<main>
+  <div class="welcome">
+    <h2>Welcome to HBPL Management</h2>
+    <p id="adminName">Checking admin access...</p>
+    <p id="status">Please wait...</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>👥 Players</h3>
+      <p>Manage player registrations.</p>
+    </div>
+
+    <div class="card">
+    <h3>💰 Payments Management</h3>
+
+    <select id="paymentFilter">
+        <option value="all">All Payments</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+    </select>
+
+    <p id="paymentMessage">Loading payments...</p>
+    <div id="paymentList"></div>
+    </div>
+
+    <div class="card">
+      <h3>🏆 Teams</h3>
+      <p>Manage tournament teams.</p>
+    </div>
+
+    <div class="card">
+      <h3>🖼️ Posters</h3>
+      <p>Manage tournament posters.</p>
+    </div>
+
+    <div class="card">
+      <h3>📢 Notices & Events</h3>
+      <p>Publish announcements and events.</p>
+    </div>
+
+    <div class="card">
+      <h3>📅 Fixtures & Results</h3>
+      <p>Manage match schedules and results.</p>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Website Settings</h3>
+      <p>Manage tournament information.</p>
+    </div>
+
+    <div class="card">
+      <h3>👨‍💼 Admin Management</h3>
+      <p>Manage admin permissions.</p>
+    </div><div class="card">
+  <h2>⚙️ Website Management</h2>
+  <p>Manage President, Owner, Captain, Organisers and Sponsors.</p>
+  <div id="websitePeopleMessage">Loading...</div>
+  <div id="websitePeopleList"></div>
+    </div>
+  </div>
+
+
+</main>
+
+<script>
+const SUPABASE_URL =
+"https://izcmltsynxecmvwpvpwf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_bsOWgTYMvizka3LfftaIYg_naJI0ukF";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: "hbpl-auth-session"
+  }
+});
+
+async function checkAdmin() {
+  const status = document.getElementById("status");
+
+  const { data: { session }, error: sessionError } =
+    await db.auth.getSession();
+
+  if (sessionError) {
+    status.textContent = "Session error: " + sessionError.message;
+    return;
+  }
+
+  if (!session) {
+    status.textContent = "No session found. Login session save nahi hui.";
+    return;
+  }
+
+  status.textContent = "Session found. Checking profile...";
+
+  const { data: profile, error: profileError } = await db
+    .from("profiles")
+    .select("full_name, role")
+    .eq("id", session.user.id)
+    .single();
+
+  if (profileError) {
+    status.textContent = "Profile error: " + profileError.message;
+    return;
+  }
+
+  if (!profile ||
+      !["super_admin", "developer", "admin"].includes(profile.role)) {
+    status.textContent = "Admin permission nahi mili.";
+    return;
+  }
+
+  document.getElementById("adminName").textContent =
+    "Logged in as " + profile.full_name + " (" + profile.role + ")";
+
+  status.textContent = "Admin access verified!";
+  loadPlayers();
+loadTeams();
+loadPayments();
+  loadWebsitePeople();
+}
+
+document.getElementById("logoutBtn")
+.addEventListener("click",async()=>{
+  await db.auth.signOut();
+  window.location.href="admin.html";
+}); // PAYMENT MANAGEMENT
+async function loadPayments() {
+  const message = document.getElementById("paymentMessage");
+  const list = document.getElementById("paymentList");
+  const filter = document.getElementById("paymentFilter");
+
+  const { data, error } = await db
+    .from("payments")
+    .select("id,payment_type,amount,utr_number,payment_status,receipt_url,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    message.textContent = "Error: " + error.message;
+    return;
+  }
+
+  function renderPayments() {
+    list.innerHTML = "";
+
+    const selected = filter.value;
+    const records = data.filter(payment =>
+      selected === "all" || payment.payment_status === selected
+    );
+
+    message.textContent = records.length + " payments found.";
+
+    records.forEach(payment => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = payment.payment_type;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Amount: ₹" + payment.amount +
+        " | UTR: " + payment.utr_number +
+        " | Status: " + payment.payment_status;
+
+      card.append(title, details);
+
+      if (payment.receipt_url) {
+        const button = document.createElement("button");
+        button.textContent = "View Private Receipt";
+
+        button.onclick = async () => {
+          const { data: file, error } = await db.storage
+            .from("payment-receipts")
+            .createSignedUrl(payment.receipt_url, 60);
+
+          if (error) {
+            alert("Receipt error: " + error.message);
+            return;
+          }
+
+          window.open(file.signedUrl, "_blank");
+        };
+
+        card.appendChild(button);
+      }
+if (payment.payment_status === "pending") {
+  const actions = document.createElement("div");
+
+  const approveBtn = document.createElement("button");
+  approveBtn.textContent = "Approve Payment";
+
+  approveBtn.onclick = () => updatePaymentStatus(
+    payment.id,
+    "verified"
+  );
+
+  const rejectBtn = document.createElement("button");
+  rejectBtn.textContent = "Reject Payment";
+
+  rejectBtn.onclick = () => updatePaymentStatus(
+    payment.id,
+    "rejected"
+  );
+
+  actions.append(approveBtn, rejectBtn);
+  card.appendChild(actions);
+}
+      list.appendChild(card);
+    });
+  }
+
+  filter.addEventListener("change", renderPayments);
+  renderPayments();
+}
+  async function updatePaymentStatus(paymentId, newStatus) {
+  if (!["verified", "rejected"].includes(newStatus)) return;
+
+  const confirmed = confirm(
+    `Are you sure you want to ${newStatus} this payment?`
+  );
+
+  if (!confirmed) return;
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) {
+    alert("Admin login required.");
+    return;
+  }
+
+  const { error } = await db
+    .from("payments")
+    .update({
+      payment_status: newStatus,
+      verified_by: user.id,
+      verified_at: new Date().toISOString()
+    })
+    .eq("id", paymentId);
+
+  if (error) {
+    alert("Payment update failed: " + error.message);
+    return;
+  }
+
+  alert("Payment " + newStatus + " successfully!");
+  await loadPayments();
+  }
 async function loadPlayers() {
   const main = document.querySelector("main");
 
   let section = document.getElementById("playersSection");
-
   if (!section) {
     section = document.createElement("section");
     section.id = "playersSection";
@@ -12,144 +327,50 @@ async function loadPlayers() {
 
   section.innerHTML = `
     <h2>🏏 Player Management</h2>
-
-    <div style="
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
-      gap:12px;
-      margin:18px 0;
-    ">
-      <div class="card">
-        <h3>Total Registered</h3>
-        <h2 id="totalPlayers">...</h2>
-      </div>
-
-      <div class="card">
-        <h3>Pending</h3>
-        <h2 id="pendingPlayers">...</h2>
-      </div>
-
-      <div class="card">
-        <h3>Approved</h3>
-        <h2 id="approvedPlayers">...</h2>
-      </div>
-
-      <div class="card">
-        <h3>Rejected</h3>
-        <h2 id="rejectedPlayers">...</h2>
-      </div>
-    </div>
-
-    <input
-      id="playerSearch"
-      placeholder="Search name, application number or mobile"
-      style="width:100%;padding:12px;margin-bottom:12px;"
-    >
-
-    <select id="playerFilter" style="padding:10px;">
+    <input id="playerSearch" placeholder="Search name or application number">
+    <select id="playerFilter">
       <option value="">All Players</option>
       <option value="pending">Pending</option>
       <option value="approved">Approved</option>
       <option value="rejected">Rejected</option>
     </select>
-
-    <button id="refreshPlayers" style="margin:10px;">
-      🔄 Refresh
-    </button>
-
-    <p id="playerMessage">Loading players...</p>
+    <p id="playerMessage">Loading...</p>
     <div id="playersList"></div>
   `;
 
-  const message = document.getElementById("playerMessage");
-  const list = document.getElementById("playersList");
-
-  // Fetch exact registration counts
-  async function loadPlayerCounts() {
-    const [total, pending, approved, rejected] = await Promise.all([
-      db.from("registrations")
-        .select("id", { count: "exact", head: true }),
-
-      db.from("registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("registration_status", "pending"),
-
-      db.from("registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("registration_status", "approved"),
-
-      db.from("registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("registration_status", "rejected")
-    ]);
-
-    if (total.error || pending.error ||
-        approved.error || rejected.error) {
-      message.textContent = "Count error: " +
-        (total.error || pending.error ||
-         approved.error || rejected.error).message;
-      return;
-    }
-
-    document.getElementById("totalPlayers").textContent =
-      total.count ?? 0;
-
-    document.getElementById("pendingPlayers").textContent =
-      pending.count ?? 0;
-
-    document.getElementById("approvedPlayers").textContent =
-      approved.count ?? 0;
-
-    document.getElementById("rejectedPlayers").textContent =
-      rejected.count ?? 0;
-  }
-
-  // Fetch player records
   const { data, error } = await db
     .from("registrations")
     .select("*")
     .order("created_at", { ascending: false });
 
+  const message = document.getElementById("playerMessage");
+  const list = document.getElementById("playersList");
+
   if (error) {
-    message.textContent = "Error: " + error.message;
+    message.textContent = error.message;
     return;
   }
 
-  await loadPlayerCounts();
-
   function renderPlayers() {
     const search = document.getElementById("playerSearch")
-      .value.trim().toLowerCase();
+      .value.toLowerCase();
 
     const filter = document.getElementById("playerFilter").value;
 
-    const filtered = data.filter(p => {
-      const name = (p.player_name || "").toLowerCase();
-      const application = (p.application_no || "").toLowerCase();
-      const mobile = (p.mobile || "").toLowerCase();
-
-      return (
-        (!filter || p.registration_status === filter) &&
-        (
-          name.includes(search) ||
-          application.includes(search) ||
-          mobile.includes(search)
-        )
-      );
-    });
+    const filtered = data.filter(p =>
+      (!filter || p.registration_status === filter) &&
+      (
+        (p.player_name || "").toLowerCase().includes(search) ||
+        (p.application_no || "").toLowerCase().includes(search)
+      )
+    );
 
     message.textContent = filtered.length + " players found.";
     list.innerHTML = "";
 
-    if (filtered.length === 0) {
-      list.textContent = "No players found.";
-      return;
-    }
-
     filtered.forEach(p => {
       const card = document.createElement("div");
       card.className = "card";
-      card.style.marginTop = "12px";
 
       const title = document.createElement("h3");
       title.textContent = p.player_name || "Unnamed Player";
@@ -160,57 +381,33 @@ async function loadPlayers() {
         " | Mobile: " + (p.mobile || "N/A") +
         " | Age: " + (p.age || "N/A") +
         " | Role: " + (p.role || "N/A") +
-        " | Status: " + (p.registration_status || "N/A");
+        " | Status: " + p.registration_status;
 
       const view = document.createElement("button");
       view.textContent = "View Details";
-
-      view.onclick = () => {
-        alert(
-          "Name: " + (p.player_name || "N/A") +
-          "\nApplication: " + (p.application_no || "N/A") +
-          "\nMobile: " + (p.mobile || "N/A") +
-          "\nAge: " + (p.age || "N/A") +
-          "\nAddress: " + (p.address || "N/A") +
-          "\nRole: " + (p.role || "N/A") +
-          "\nStatus: " + (p.registration_status || "N/A")
-        );
-      };
+      view.onclick = () => alert(
+        "Name: " + p.player_name +
+        "\nApplication: " + (p.application_no || "N/A") +
+        "\nMobile: " + p.mobile +
+        "\nAge: " + p.age +
+        "\nAddress: " + (p.address || "N/A") +
+        "\nRole: " + (p.role || "N/A")
+      );
 
       card.append(title, details, view);
 
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
-
-        btn.textContent =
-          status === "approved" ? "Approve" : "Reject";
-
-        btn.style.margin = "8px";
+        btn.textContent = status === "approved" ? "Approve" : "Reject";
 
         btn.onclick = async () => {
-          const confirmed = confirm(
-            "Are you sure you want to " + status +
-            " this player?"
-          );
-
-          if (!confirmed) return;
-
-          btn.disabled = true;
-
           const { error } = await db
             .from("registrations")
             .update({ registration_status: status })
             .eq("id", p.id);
 
-          if (error) {
-            alert("Update failed: " + error.message);
-            btn.disabled = false;
-            return;
-          }
-
-          alert("Player " + status + " successfully!");
-
-          await loadPlayers();
+          if (error) alert(error.message);
+          else loadPlayers();
         };
 
         card.appendChild(btn);
@@ -226,18 +423,222 @@ async function loadPlayers() {
   document.getElementById("playerFilter")
     .addEventListener("change", renderPlayers);
 
-  document.getElementById("refreshPlayers")
-    .addEventListener("click", loadPlayers);
-
   renderPlayers();
 }
+  async function loadTeams() {
+  const main = document.querySelector("main");
 
-// Refresh player data every 30 seconds
-setInterval(() => {
-  if (
-    document.visibilityState === "visible" &&
-    document.getElementById("playersSection")
-  ) {
-    loadPlayers();
+  let section = document.getElementById("teamsSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "teamsSection";
+    section.className = "card";
+    main.appendChild(section);
   }
-}, 30000);
+
+  section.innerHTML = `
+    <h2>🏆 Team Management</h2>
+    <input id="teamSearch" placeholder="Search team or owner">
+    <select id="teamFilter">
+      <option value="">All Teams</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <p id="teamMessage">Loading teams...</p>
+    <div id="teamList"></div>
+  `;
+
+  const { data, error } = await db
+    .from("teams")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const message = document.getElementById("teamMessage");
+  const list = document.getElementById("teamList");
+
+  if (error) {
+    message.textContent = "Error: " + error.message;
+    return;
+  }
+
+  function renderTeams() {
+    const search = document.getElementById("teamSearch").value.toLowerCase();
+    const filter = document.getElementById("teamFilter").value;
+
+    const filtered = data.filter(team =>
+      (!filter || team.status === filter) &&
+      ((team.team_name || "").toLowerCase().includes(search) ||
+       (team.owner_name || "").toLowerCase().includes(search))
+    );
+
+    message.textContent = filtered.length + " teams found.";
+    list.innerHTML = "";
+
+    filtered.forEach(team => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent = team.team_name;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Owner: " + team.owner_name +
+        " | Status: " + team.status;
+
+      
+const view = document.createElement("button");
+view.textContent = "View Details";
+
+view.onclick = () => alert(
+  "Team Name: " + team.team_name +
+  "\nOwner: " + team.owner_name +
+  "\nStatus: " + team.status +
+  "\nCreated: " + team.created_at
+);
+      card.append(title, details, view);
+      ["approved", "rejected"].forEach(status => {
+        const btn = document.createElement("button");
+        btn.textContent = status === "approved" ? "Approve" : "Reject";
+
+        btn.onclick = async () => {
+          const { error } = await db
+            .from("teams")
+            .update({ status })
+            .eq("id", team.id);
+
+          if (error) alert(error.message);
+          else loadTeams();
+        };
+
+        card.appendChild(btn);
+      });
+
+      list.appendChild(card);
+    });
+  }
+
+  document.getElementById("teamSearch")
+    .addEventListener("input", renderTeams);
+
+  document.getElementById("teamFilter")
+    .addEventListener("change", renderTeams);
+
+  renderTeams();
+  }
+  async function loadWebsitePeople() {
+  const message = document.getElementById("websitePeopleMessage");
+  const list = document.getElementById("websitePeopleList");
+
+  list.innerHTML = `
+    <h3>Add Website Member</h3>
+    <input id="wpName" placeholder="Full Name">
+    <input id="wpDesignation" placeholder="Designation">
+    <input id="wpPhoto" type="file" accept="image/*">
+    <button id="wpSave">Save Member</button>
+  `;
+
+  const { data, error } = await db
+    .from("website_people")
+    .select("*")
+    .order("sort_order");
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+  list.innerHTML += "<h3>Website Members</h3>";
+
+  data.forEach(person => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h3>${person.full_name}</h3>
+      <p>${person.designation}</p>
+      ${person.photo_url ? `<img src="${person.photo_url}" width="100">` : ""}
+      <button>Edit</button>
+      <button>Delete</button>
+    `;
+
+    const buttons = card.querySelectorAll("button");
+
+    buttons[0].onclick = () => {
+      document.getElementById("wpName").value = person.full_name;
+      document.getElementById("wpDesignation").value = person.designation;
+      document.getElementById("wpSave").dataset.id = person.id;
+    };
+
+    buttons[1].onclick = async () => {
+      if (!confirm("Delete this member?")) return;
+      const { error } = await db
+        .from("website_people")
+        .delete()
+        .eq("id", person.id);
+
+      if (error) alert(error.message);
+      else loadWebsitePeople();
+    };
+
+    list.appendChild(card);
+  });
+
+  document.getElementById("wpSave").onclick = async () => {
+    const name = document.getElementById("wpName").value.trim();
+    const designation = document.getElementById("wpDesignation").value.trim();
+    const file = document.getElementById("wpPhoto").files[0];
+    const id = document.getElementById("wpSave").dataset.id;
+
+    if (!name || !designation) {
+      alert("Name and designation required.");
+      return;
+    }
+
+    let photo_url = id
+      ? data.find(p => p.id === id)?.photo_url
+      : null;
+
+    if (file) {
+      const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+      const { error: uploadError } = await db.storage
+        .from("website-people")
+        .upload(path, file);
+
+      if (uploadError) {
+        alert(uploadError.message);
+        return;
+      }
+
+      photo_url = db.storage
+        .from("website-people")
+        .getPublicUrl(path).data.publicUrl;
+    }
+
+    const payload = {
+      full_name: name,
+      designation,
+      photo_url
+    };
+
+    const result = id
+      ? await db.from("website_people").update(payload).eq("id", id)
+      : await db.from("website_people").insert(payload);
+
+    if (result.error) {
+      alert(result.error.message);
+      return;
+    }
+
+    alert("Member saved successfully!");
+    loadWebsitePeople();
+  };
+  }
+checkAdmin();
+</script>
+
+</body>
+</html>
