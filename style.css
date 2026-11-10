@@ -4,4 +4,32 @@
 
 #publicWebsitePeople{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:25px}
 #publicWebsitePeople .card{text-align:center;padding:20px;border-radius:14px;background:#fff;box-shadow:0 4px 15px #0002}
-#publicWebsitePeople img{width:160px;height:170px;object-fit:cover;border-radius:12px;margin-top:12px}
+
+#publicWebsitePeople .card{
+  text-align:center;
+  padding:24px 16px;
+  border-radius:18px;
+}
+
+#publicWebsitePeople h3{
+  font-size:22px;
+  font-weight:800;
+  margin:18px 0 6px;
+  color:#101d35;
+}
+
+#publicWebsitePeople p{
+  font-size:15px;
+  color:#687386;
+  margin:6px 0 16px;
+}
+
+#publicWebsitePeople img{
+  width:100%;
+  max-width:280px;
+  height:auto;
+  object-fit:contain;
+  border-radius:12px;
+  margin:12px auto 0;
+  display:block;
+}
