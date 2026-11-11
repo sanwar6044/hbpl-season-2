@@ -455,8 +455,51 @@ async function loadPlayers() {
           "\nStatus: " + (p.registration_status || "N/A")
         );
       };
+      const photoButton = document.createElement("button");
+      photoButton.textContent = "📷 View Player Photo";
+      photoButton.style.margin = "8px";
 
-      card.append(title, details, view);
+      photoButton.onclick = async () => {
+        if (!p.player_photo_path) {
+          alert("Player photo not found.");
+          return;
+        }
+
+        const existingPhoto = card.querySelector(".player-photo-preview");
+
+        if (existingPhoto) {
+          existingPhoto.remove();
+          photoButton.textContent = "📷 View Player Photo";
+          return;
+        }
+
+        photoButton.disabled = true;
+        photoButton.textContent = "Loading photo...";
+
+        const { data: photoData, error: photoError } = await db
+          .storage
+          .from("registration-photos")
+          .createSignedUrl(p.player_photo_path, 300);
+
+        photoButton.disabled = false;
+
+        if (photoError || !photoData?.signedUrl) {
+          alert("Could not load player photo.");
+          photoButton.textContent = "📷 View Player Photo";
+          return;
+        }
+
+        const photo = document.createElement("img");
+        photo.src = photoData.signedUrl;
+        photo.alt = "Player Photo";
+        photo.className = "player-photo-preview";
+        photo.style.cssText =
+          "display:block;width:150px;height:150px;object-fit:cover;border-radius:10px;margin:10px 0;";
+
+        card.appendChild(photo);
+        photoButton.textContent = "Hide Player Photo";
+      };
+      card.append(title, details, view, photoButton);
 
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
