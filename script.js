@@ -161,20 +161,20 @@ if (form) {
   form.addEventListener("submit", async function(event) {
 event.preventDefault();
     // Re-check all registration steps before final submission
+form.showWizardStep(1);
 
-showWizardStep(1);
-
-if (!validateWizardStep(1)) {
+if (!form.validateWizardStep(1)) {
     return;
 }
 
-showWizardStep(2);
+form.showWizardStep(2);
 
-if (!validateWizardStep(2)) {
+if (!form.validateWizardStep(2)) {
     return;
 }
 
-showWizardStep(3);
+form.showWizardStep(3);
+
 
 
     const button = form.querySelector(
@@ -191,9 +191,9 @@ const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 if (
   !photo ||
   !allowedTypes.includes(photo.type) ||
-  photo.size > 5 * 1024 * 1024
+  photo.size > 1 * 1024 * 1024
 ) {
-  message.textContent = "Upload JPG, PNG or WebP photo up to 5 MB.";
+    message.textContent = "Upload JPG, PNG or WebP photo up to 1 MB.";
   return;
 }
 
