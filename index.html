@@ -73,39 +73,69 @@
       <div class="registration-grid">
         <div><h2>READY TO<br><em>PLAY BIG?</em></h2><p>Register your interest for HBPL Season 2. Our organising team will contact you with the next steps.</p><div class="reg-price"><span>PLAYER REGISTRATION FEE</span><b>₹150</b></div><small class="note">Player registration is open for HBPL Season 2. Submit your details and our organising team will contact you. Online payment is not connected yet.
         
+
 <form id="regForm" class="reg-form">
+
+  <!-- WIZARD PROGRESS -->
   <div class="wizard-progress full">
     <div class="wizard-progress-top">
       <strong id="wizardStepLabel">STEP 1 OF 3</strong>
-      <span id="wizardStepName">Player Details</span>
+      <span id="wizardStepName">Personal Information</span>
     </div>
     <div class="wizard-track">
       <span id="wizardProgressBar"></span>
     </div>
   </div>
 
-  <!-- STEP 1 -->
+  <!-- STEP 1: PERSONAL INFORMATION -->
   <div class="wizard-panel full" data-wizard-step="1">
-    <div class="wizard-panel-title">Player Details</div>
 
-    <label>Full name
-      <input name="name" placeholder="Enter player name" required>
+    <div class="wizard-panel-title">Personal Information</div>
+
+    <label>Full Name *
+      <input name="name" type="text"
+        placeholder="Enter your full name" required>
     </label>
 
-    <label>Mobile number
-      <input name="phone" type="tel" inputmode="numeric"
-        pattern="[0-9]{10}" maxlength="10"
-        placeholder="10-digit mobile number" required>
+    <label>Father's Name *
+      <input name="father_name" type="text"
+        placeholder="Enter father's name" required>
     </label>
 
-    <label>Age
-      <input name="age" type="number" min="10" max="70"
-        placeholder="Your age" required>
+    <label>Date of Birth
+      <input name="dob" type="date">
     </label>
 
-    <label>Playing role
+    <label>Age *
+      <input name="age" type="number"
+        min="10" max="70" placeholder="Enter age" required>
+    </label>
+
+    <label>Mobile Number *
+      <input name="phone" type="tel"
+        inputmode="numeric" pattern="[0-9]{10}"
+        maxlength="10" placeholder="10-digit mobile number" required>
+    </label>
+
+    <label>WhatsApp Number
+      <input name="whatsapp" type="tel"
+        inputmode="numeric" pattern="[0-9]{10}"
+        maxlength="10" placeholder="WhatsApp number">
+    </label>
+
+    <label>Player Category *
+      <select name="player_category" required>
+        <option value="">Select category</option>
+        <option value="Batsman">Batsman</option>
+        <option value="Bowler">Bowler</option>
+        <option value="All-rounder">All-rounder</option>
+        <option value="Wicket-keeper">Wicket-keeper</option>
+      </select>
+    </label>
+
+    <label>Playing Role *
       <select name="role" required>
-        <option value="">Select role</option>
+        <option value="">Select playing role</option>
         <option>Batsman</option>
         <option>Bowler</option>
         <option>All-rounder</option>
@@ -115,22 +145,87 @@
 
     <button class="btn btn-gold full" type="button"
       data-wizard-next="2">
-      Continue to Address →
+      Continue to Cricket Profile →
     </button>
+
   </div>
 
-  <!-- STEP 2 -->
+  <!-- STEP 2: CRICKET PROFILE AND ADDRESS -->
   <div class="wizard-panel full" data-wizard-step="2" hidden>
-    <div class="wizard-panel-title">Address & Photo</div>
 
-    <label class="full">Village / Address
-      <input name="address" placeholder="Enter village or address" required>
+    <div class="wizard-panel-title">Cricket Profile</div>
+
+    <label>Batting Style *
+      <select name="batting_style" required>
+        <option value="">Select batting style</option>
+        <option>Right Handed</option>
+        <option>Left Handed</option>
+      </select>
     </label>
 
-    <label class="full">Player Photo (Required — Max 5 MB)
+    <label>Bowling Style *
+      <select name="bowling_style" required>
+        <option value="">Select bowling style</option>
+        <option>Right Arm Fast</option>
+        <option>Left Arm Fast</option>
+        <option>Right Arm Medium</option>
+        <option>Left Arm Medium</option>
+        <option>Right Arm Spin</option>
+        <option>Left Arm Spin</option>
+        <option>Do Not Bowl</option>
+      </select>
+    </label>
+
+    <label>Preferred Position
+      <select name="preferred_position">
+        <option value="">Select preferred position</option>
+        <option>Opening Batsman</option>
+        <option>Middle Order</option>
+        <option>Finisher</option>
+        <option>Wicket Keeper</option>
+        <option>Bowler</option>
+        <option>All-rounder</option>
+      </select>
+    </label>
+
+    <div class="wizard-panel-title full">Address Details</div>
+
+    <label>Village / Town *
+      <input name="village" type="text"
+        placeholder="Enter village or town" required>
+    </label>
+
+    <label>Post Office (PO) *
+      <input name="post_office" type="text"
+        placeholder="Enter post office" required>
+    </label>
+
+    <label>Police Station (PS) *
+      <input name="police_station" type="text"
+        placeholder="Enter police station" required>
+    </label>
+
+    <label>District *
+      <input name="district" type="text"
+        placeholder="Enter district" required>
+    </label>
+
+    <label>PIN Code *
+      <input name="pin_code" type="text"
+        inputmode="numeric" pattern="[0-9]{6}"
+        maxlength="6" placeholder="6-digit PIN code" required>
+    </label>
+
+    <!-- Existing database compatibility field -->
+    <label class="full">Complete Address *
+      <textarea name="address" rows="3"
+        placeholder="Enter your complete address" required></textarea>
+    </label>
+
+    <label class="full">Player Photo *
       <input name="photo" type="file"
         accept="image/jpeg,image/png,image/webp" required>
-      <small>Accepted: JPG, PNG, WebP. Maximum 5 MB.</small>
+      <small>JPG, PNG or WebP. Maximum 1 MB.</small>
     </label>
 
     <div class="wizard-actions full">
@@ -138,15 +233,17 @@
         data-wizard-back="1">← Back</button>
 
       <button class="btn btn-gold" type="button"
-        data-wizard-next="3">Preview Details →</button>
+        data-wizard-next="3">Preview Application →</button>
     </div>
+
   </div>
 
-  <!-- STEP 3 -->
+  <!-- STEP 3: PREVIEW -->
   <div class="wizard-panel full" data-wizard-step="3" hidden>
-    <div class="wizard-panel-title">Review Your Details</div>
 
-    <p>Please check your details before final submission.</p>
+    <div class="wizard-panel-title">Preview Your Application</div>
+
+    <p>Please check all information carefully before submission.</p>
 
     <div id="playerRegistrationPreview" class="player-preview"></div>
 
@@ -158,10 +255,12 @@
         Final Submit ↗
       </button>
     </div>
+
   </div>
 
   <div id="formMessage" class="form-message full"
     aria-live="polite"></div>
+
 </form>
           
       </div>
