@@ -50,41 +50,75 @@ if (form) {
       new FormData(form).entries()
     );
 
-    const registration = {
-      player_name: String(data.name || "").trim(),
-      mobile: String(data.phone || "").trim(),
-      age: Number(data.age),
-      role: String(data.role || ""),
-      address: String(data.address || "").trim(),
-      registration_status: "pending"
-    };
+    const photo = data.photo;
+const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-    if (message) {
-      message.textContent = "Submitting registration...";
+if (
+  !photo ||
+  !allowedTypes.includes(photo.type) ||
+  photo.size > 5 * 1024 * 1024
+) {
+  message.textContent = "Upload JPG, PNG or WebP photo up to 5 MB.";
+  return;
+}
+
+const registration = {
+  player_name: String(data.name || "").trim(),
+  mobile: String(data.phone || "").trim(),
+  age: Number(data.age),
+  role: String(data.role || ""),
+  address: String(data.address || "").trim()
+};
+
+if (button) button.disabled = true;
+message.textContent = "Uploading player photo...";
+
+try {
+  const extension = photo.type === "image/jpeg"
+    ? "jpg"
+    : photo.type === "image/png" ? "png" : "webp";
+
+  const photoPath = `players/${crypto.randomUUID()}.${extension}`;
+
+  const uploadResponse = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/registration-photos/${photoPath}`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": photo.type,
+        "x-upsert": "false"
+      },
+      body: photo
     }
+  );
 
-    if (button) button.disabled = true;
-
-    try {
-
-      const response = await fetch(
-  `${SUPABASE_URL}/rest/v1/rpc/register_player`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`
-    },
-    body: JSON.stringify({
-      p_player_name: registration.player_name,
-      p_mobile: registration.mobile,
-      p_age: registration.age,
-      p_role: registration.role,
-      p_address: registration.address
-    })
+  if (!uploadResponse.ok) {
+    throw new Error("Photo upload failed: " + await uploadResponse.text());
   }
-);
+
+  message.textContent = "Saving player registration...";
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/register_player`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        p_player_name: registration.player_name,
+        p_mobile: registration.mobile,
+        p_age: registration.age,
+        p_role: registration.role,
+        p_address: registration.address,
+        p_photo_path: photoPath
+      })
+    }
+  );
 
 if (!response.ok) {
   const errorText = await response.text();
