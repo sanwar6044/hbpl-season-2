@@ -146,8 +146,27 @@
 
       <label>Owner / Captain Name
         <input name="owner_name" placeholder="Enter owner or captain name" required>
+      </label> <label>
+  Owner / Captain Mobile Number
+  <input
+    name="owner_mobile"
+    type="tel"
+    inputmode="numeric"
+    pattern="[0-9]{10}"
+    maxlength="10"
+    placeholder="Enter 10-digit mobile number"
+    required
+  >
       </label>
-
+<label>
+  Owner / Captain Photo (Required — Max 5 MB)
+  <input
+    name="photo"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    required
+  >
+</label>
       <button class="btn btn-gold full" type="submit">
         Submit Team Registration ↗
       </button>
