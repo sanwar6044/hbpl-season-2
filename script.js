@@ -86,30 +86,43 @@ form.noValidate = true;
     return true;
   }
 
-  function createPreview() {
-    if (!previewBox) return;
+  
+function createPreview() {
+  if (!previewBox) return;
 
-    previewBox.replaceChildren();
+  previewBox.replaceChildren();
 
-    const fields = [
-      ["Player Name", form.elements.name.value],
-      ["Mobile Number", form.elements.phone.value],
-      ["Age", form.elements.age.value],
-      ["Playing Role", form.elements.role.value],
-      ["Address", form.elements.address.value],
-      ["Photo", form.elements.photo.files[0]?.name || "Not selected"]
-    ];
+  const fields = [
+    ["Player Name", form.elements.name.value],
+    ["Father's Name", form.elements.father_name.value],
+    ["Date of Birth", form.elements.dob.value || "Not provided"],
+    ["Age", form.elements.age.value],
+    ["Mobile Number", form.elements.phone.value],
+    ["WhatsApp Number", form.elements.whatsapp.value || "Not provided"],
+    ["Player Category", form.elements.player_category.value],
+    ["Playing Role", form.elements.role.value],
+    ["Batting Style", form.elements.batting_style.value],
+    ["Bowling Style", form.elements.bowling_style.value],
+    ["Preferred Position", form.elements.preferred_position.value || "Not provided"],
+    ["Village / Town", form.elements.village.value],
+    ["Post Office", form.elements.post_office.value],
+    ["Police Station", form.elements.police_station.value],
+    ["District", form.elements.district.value],
+    ["PIN Code", form.elements.pin_code.value],
+    ["Complete Address", form.elements.address.value],
+    ["Player Photo", form.elements.photo.files[0]?.name || "Not selected"]
+  ];
 
-    fields.forEach(([label, value]) => {
-      const row = document.createElement("p");
-      const strong = document.createElement("strong");
+  fields.forEach(([label, value]) => {
+    const row = document.createElement("p");
+    const strong = document.createElement("strong");
 
-      strong.textContent = label + ": ";
-      row.append(strong, document.createTextNode(value));
-      previewBox.appendChild(row);
-    });
-  }
-
+    strong.textContent = label + ": ";
+    row.append(strong, document.createTextNode(value));
+    previewBox.appendChild(row);
+  });
+}
+  
   form.addEventListener("click", function(event) {
     const nextButton = event.target.closest("[data-wizard-next]");
     const backButton = event.target.closest("[data-wizard-back]");
