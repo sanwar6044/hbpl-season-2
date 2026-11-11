@@ -609,9 +609,6 @@ async function loadPlayers() {
       title.textContent = team.team_name;
 
       const details = document.createElement("p");
-      details.textContent =
-        "Owner: " + team.owner_name +
-        " | Status: " + team.status;
 
       
 const view = document.createElement("button");
@@ -623,7 +620,57 @@ view.onclick = () => alert(
   "\nStatus: " + team.status +
   "\nCreated: " + team.created_at
 );
-      card.append(title, details, view);
+            details.textContent =
+        "Owner: " + team.owner_name +
+        " | Mobile: " + (team.owner_mobile || "N/A") +
+        " | Status: " + team.status;
+
+      const photoButton = document.createElement("button");
+      photoButton.textContent = "📷 View Owner Photo";
+      photoButton.style.margin = "8px";
+
+      photoButton.onclick = async () => {
+        if (!team.owner_photo_path) {
+          alert("Owner photo not found.");
+          return;
+        }
+
+        const existingPhoto = card.querySelector(".team-owner-photo");
+
+        if (existingPhoto) {
+          existingPhoto.remove();
+          photoButton.textContent = "📷 View Owner Photo";
+          return;
+        }
+
+        photoButton.disabled = true;
+        photoButton.textContent = "Loading photo...";
+
+        const { data: photoData, error: photoError } = await db
+          .storage
+          .from("registration-photos")
+          .createSignedUrl(team.owner_photo_path, 300);
+
+        photoButton.disabled = false;
+
+        if (photoError || !photoData?.signedUrl) {
+          alert("Could not load owner photo.");
+          photoButton.textContent = "📷 View Owner Photo";
+          return;
+        }
+
+        const photo = document.createElement("img");
+        photo.src = photoData.signedUrl;
+        photo.alt = "Team Owner Photo";
+        photo.className = "team-owner-photo";
+        photo.style.cssText =
+          "display:block;width:150px;height:150px;object-fit:cover;border-radius:10px;margin:10px 0;";
+
+        card.appendChild(photo);
+        photoButton.textContent = "Hide Owner Photo";
+      };
+
+      card.append(title, details, view, photoButton);
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
         btn.textContent = status === "approved" ? "Approve" : "Reject";
