@@ -156,8 +156,22 @@ function createPreview() {
 if (form) {
 
   form.addEventListener("submit", async function(event) {
+event.preventDefault();
+    // Re-check all registration steps before final submission
 
-    event.preventDefault();
+showWizardStep(1);
+
+if (!validateWizardStep(1)) {
+    return;
+}
+
+showWizardStep(2);
+
+if (!validateWizardStep(2)) {
+    return;
+}
+
+showWizardStep(3);
 
 
     const button = form.querySelector(
