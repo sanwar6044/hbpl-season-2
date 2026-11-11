@@ -86,6 +86,9 @@ form.noValidate = true;
     return true;
   }
 
+  form.showWizardStep = showWizardStep;
+form.validateWizardStep = validateWizardStep;
+
   
 function createPreview() {
   if (!previewBox) return;
