@@ -169,13 +169,52 @@ if (teamForm) {
   teamForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
-    const button = teamForm.querySelector('button[type="submit"]');
+        const button = teamForm.querySelector('button[type="submit"]');
     const data = Object.fromEntries(new FormData(teamForm).entries());
 
+    const photo = data.photo;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!photo || !allowedTypes.includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+      teamMessage.textContent = "Upload JPG, PNG or WebP photo up to 5 MB.";
+      return;
+    }
+
+    if (!/^[0-9]{10}$/.test(String(data.owner_mobile || "").trim())) {
+      teamMessage.textContent = "Enter a valid 10-digit mobile number.";
+      return;
+    }
+
     button.disabled = true;
-    teamMessage.textContent = "Submitting team registration...";
+    teamMessage.textContent = "Uploading team owner photo...";
 
     try {
+      const extension = photo.type === "image/jpeg"
+        ? "jpg"
+        : photo.type === "image/png" ? "png" : "webp";
+
+      const photoPath = `teams/${crypto.randomUUID()}.${extension}`;
+
+      const uploadResponse = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/registration-photos/${photoPath}`,
+        {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": photo.type,
+            "x-upsert": "false"
+          },
+          body: photo
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error("Photo upload failed: " + await uploadResponse.text());
+      }
+
+      teamMessage.textContent = "Saving team registration...";
+
       const response = await fetch(`${SUPABASE_URL}/rest/v1/teams`, {
         method: "POST",
         headers: {
@@ -187,6 +226,8 @@ if (teamForm) {
         body: JSON.stringify({
           team_name: data.team_name.trim(),
           owner_name: data.owner_name.trim(),
+          owner_mobile: data.owner_mobile.trim(),
+          owner_photo_path: photoPath,
           status: "pending"
         })
       });
