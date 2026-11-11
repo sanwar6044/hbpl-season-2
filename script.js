@@ -36,11 +36,116 @@ if (menuBtn && nav) {
 const form = document.getElementById("regForm");
 const message = document.getElementById("formMessage");
 
+// ======================================
+// PLAYER REGISTRATION WIZARD
+// ======================================
+
+if (form) {
+  const wizardPanels = form.querySelectorAll("[data-wizard-step]");
+  const stepLabel = document.getElementById("wizardStepLabel");
+  const stepName = document.getElementById("wizardStepName");
+  const progressBar = document.getElementById("wizardProgressBar");
+  const previewBox = document.getElementById("playerRegistrationPreview");
+
+  let currentWizardStep = 1;
+form.noValidate = true;
+  function showWizardStep(step) {
+    currentWizardStep = step;
+
+    wizardPanels.forEach(panel => {
+      panel.hidden = Number(panel.dataset.wizardStep) !== step;
+    });
+
+    const names = {
+      1: "Player Details",
+      2: "Address & Photo",
+      3: "Preview & Submit"
+    };
+
+    if (stepLabel) stepLabel.textContent = `STEP ${step} OF 3`;
+    if (stepName) stepName.textContent = names[step];
+    if (progressBar) progressBar.style.width = `${step * 33.333}%`;
+  }
+
+  function validateWizardStep(step) {
+    const panel = form.querySelector(
+      `[data-wizard-step="${step}"]`
+    );
+
+    if (!panel) return false;
+
+    const fields = panel.querySelectorAll("input, select, textarea");
+
+    for (const field of fields) {
+      if (!field.checkValidity()) {
+        field.reportValidity();
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function createPreview() {
+    if (!previewBox) return;
+
+    previewBox.replaceChildren();
+
+    const fields = [
+      ["Player Name", form.elements.name.value],
+      ["Mobile Number", form.elements.phone.value],
+      ["Age", form.elements.age.value],
+      ["Playing Role", form.elements.role.value],
+      ["Address", form.elements.address.value],
+      ["Photo", form.elements.photo.files[0]?.name || "Not selected"]
+    ];
+
+    fields.forEach(([label, value]) => {
+      const row = document.createElement("p");
+      const strong = document.createElement("strong");
+
+      strong.textContent = label + ": ";
+      row.append(strong, document.createTextNode(value));
+      previewBox.appendChild(row);
+    });
+  }
+
+  form.addEventListener("click", function(event) {
+    const nextButton = event.target.closest("[data-wizard-next]");
+    const backButton = event.target.closest("[data-wizard-back]");
+
+    if (nextButton) {
+      if (!validateWizardStep(currentWizardStep)) return;
+
+      const nextStep = Number(nextButton.dataset.wizardNext);
+
+      if (nextStep === 3) {
+        if (!validateWizardStep(2)) return;
+        createPreview();
+      }
+
+      showWizardStep(nextStep);
+    }
+
+    if (backButton) {
+      showWizardStep(Number(backButton.dataset.wizardBack));
+    }
+  });
+
+  form.addEventListener("reset", function() {
+    showWizardStep(1);
+    if (previewBox) previewBox.replaceChildren();
+  });
+
+  showWizardStep(1);
+}
+
 if (form) {
 
   form.addEventListener("submit", async function(event) {
 
     event.preventDefault();
+
 
     const button = form.querySelector(
       'button[type="submit"]'
