@@ -218,26 +218,40 @@ try {
 
   message.textContent = "Saving player registration...";
 
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/rpc/register_player`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`
-      },
-      body: JSON.stringify({
-        p_player_name: registration.player_name,
-        p_mobile: registration.mobile,
-        p_age: registration.age,
-        p_role: registration.role,
-        p_address: registration.address,
-        p_photo_path: photoPath
-      })
-    }
-  );
+  
+const response = await fetch(
+  `${SUPABASE_URL}/rest/v1/rpc/register_player_v2`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      p_player_name: registration.player_name,
+      p_mobile: registration.mobile,
+      p_age: registration.age,
+      p_role: registration.role,
+      p_address: registration.address,
+      p_photo_path: photoPath,
 
+      p_father_name: form.elements.father_name.value.trim(),
+      p_date_of_birth: form.elements.dob.value || null,
+      p_whatsapp_number: form.elements.whatsapp.value.trim(),
+      p_player_category: form.elements.player_category.value,
+      p_batting_style: form.elements.batting_style.value,
+      p_bowling_style: form.elements.bowling_style.value,
+      p_preferred_position: form.elements.preferred_position.value,
+      p_village: form.elements.village.value.trim(),
+      p_post_office: form.elements.post_office.value.trim(),
+      p_police_station: form.elements.police_station.value.trim(),
+      p_district: form.elements.district.value.trim(),
+      p_pin_code: form.elements.pin_code.value.trim()
+    })
+  }
+);
+  
 if (!response.ok) {
   const errorText = await response.text();
   throw new Error(errorText || "Registration failed");
