@@ -33,3 +33,17 @@
   margin:12px auto 0;
   display:block;
 }
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
+@media (max-width: 650px) {
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+  }
+}
