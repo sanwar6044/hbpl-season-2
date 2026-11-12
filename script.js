@@ -58,13 +58,14 @@ form.noValidate = true;
 
     const names = {
       1: "Player Details",
-      2: "Address & Photo",
-      3: "Preview & Submit"
+      2: "Cricket Profile & Address",
+      3: "Preview & Confirm",
+      4: "Payment"
     };
 
-    if (stepLabel) stepLabel.textContent = `STEP ${step} OF 3`;
+    if (stepLabel) stepLabel.textContent = `STEP ${step} OF 4`;
     if (stepName) stepName.textContent = names[step];
-    if (progressBar) progressBar.style.width = `${step * 33.333}%`;
+    if (progressBar) progressBar.style.width = `${step * 25}%`;
   }
 
   function validateWizardStep(step) {
@@ -87,9 +88,8 @@ form.noValidate = true;
   }
 
   form.showWizardStep = showWizardStep;
-form.validateWizardStep = validateWizardStep;
+  form.validateWizardStep = validateWizardStep;
 
-  
 function createPreview() {
   if (!previewBox) return;
 
@@ -157,159 +157,160 @@ function createPreview() {
 }
 
 if (form) {
-
   form.addEventListener("submit", async function(event) {
-event.preventDefault();
-    // Re-check all registration steps before final submission
-form.showWizardStep(1);
+    event.preventDefault();
 
-if (!form.validateWizardStep(1)) {
-    return;
-}
+    form.showWizardStep(1);
+    if (!form.validateWizardStep(1)) return;
+    form.showWizardStep(2);
+    if (!form.validateWizardStep(2)) return;
+    form.showWizardStep(3);
+    if (!form.validateWizardStep(3)) return;
+    form.showWizardStep(4);
+    if (!form.validateWizardStep(4)) return;
 
-form.showWizardStep(2);
-
-if (!form.validateWizardStep(2)) {
-    return;
-}
-
-form.showWizardStep(3);
-
-
-
-    const button = form.querySelector(
-      'button[type="submit"]'
-    );
-
-    const data = Object.fromEntries(
-      new FormData(form).entries()
-    );
-
+    const button = form.querySelector('button[type="submit"]');
+    const data = Object.fromEntries(new FormData(form).entries());
     const photo = data.photo;
-const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const paymentReceipt = data.payment_receipt;
+    const paymentUtr = String(data.payment_utr || "").trim();
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-if (
-  !photo ||
-  !allowedTypes.includes(photo.type) ||
-  photo.size > 1 * 1024 * 1024
-) {
-    message.textContent = "Upload JPG, PNG or WebP photo up to 1 MB.";
-  return;
-}
-
-const registration = {
-  player_name: String(data.name || "").trim(),
-  mobile: String(data.phone || "").trim(),
-  age: Number(data.age),
-  role: String(data.role || ""),
-  address: String(data.address || "").trim()
-};
-
-if (button) button.disabled = true;
-message.textContent = "Uploading player photo...";
-
-try {
-  const extension = photo.type === "image/jpeg"
-    ? "jpg"
-    : photo.type === "image/png" ? "png" : "webp";
-
-  const photoPath = `players/${crypto.randomUUID()}.${extension}`;
-
-  const uploadResponse = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/registration-photos/${photoPath}`,
-    {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": photo.type,
-        "x-upsert": "false"
-      },
-      body: photo
+    if (!photo || !allowedTypes.includes(photo.type) || photo.size > 1 * 1024 * 1024) {
+      message.textContent = "Upload JPG, PNG or WebP player photo up to 1 MB.";
+      return;
     }
-  );
+    if (!paymentUtr || paymentUtr.length < 8 || paymentUtr.length > 30) {
+      message.textContent = "Enter a valid UTR number (8–30 characters).";
+      return;
+    }
+    if (!paymentReceipt || !allowedTypes.includes(paymentReceipt.type) || paymentReceipt.size > 2 * 1024 * 1024) {
+      message.textContent = "Upload JPG, PNG or WebP payment screenshot up to 2 MB.";
+      return;
+    }
 
-  if (!uploadResponse.ok) {
-    throw new Error("Photo upload failed: " + await uploadResponse.text());
-  }
+    const registration = {
+      player_name: String(data.name || "").trim(),
+      mobile: String(data.phone || "").trim(),
+      age: Number(data.age),
+      role: String(data.role || ""),
+      address: String(data.address || "").trim()
+    };
 
-  message.textContent = "Saving player registration...";
+    if (button) button.disabled = true;
+    message.textContent = "Uploading player photo...";
 
-  
-const response = await fetch(
-  `${SUPABASE_URL}/rest/v1/rpc/register_player_v2`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`
-    },
-    body: JSON.stringify({
-      p_player_name: registration.player_name,
-      p_mobile: registration.mobile,
-      p_age: registration.age,
-      p_role: registration.role,
-      p_address: registration.address,
-      p_photo_path: photoPath,
+    try {
+      const photoExtension = photo.type === "image/jpeg" ? "jpg" : photo.type === "image/png" ? "png" : "webp";
+      const photoPath = `players/${crypto.randomUUID()}.${photoExtension}`;
+      const photoUpload = await fetch(`${SUPABASE_URL}/storage/v1/object/registration-photos/${photoPath}`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": photo.type,
+          "x-upsert": "false"
+        },
+        body: photo
+      });
+      if (!photoUpload.ok) throw new Error("Player photo upload failed: " + await photoUpload.text());
 
-      p_father_name: form.elements.father_name.value.trim(),
-      p_date_of_birth: form.elements.dob.value || null,
-      p_whatsapp_number: form.elements.whatsapp.value.trim(),
-      p_player_category: form.elements.player_category.value,
-      p_batting_style: form.elements.batting_style.value,
-      p_bowling_style: form.elements.bowling_style.value,
-      p_preferred_position: form.elements.preferred_position.value,
-      p_village: form.elements.village.value.trim(),
-      p_post_office: form.elements.post_office.value.trim(),
-      p_police_station: form.elements.police_station.value.trim(),
-      p_district: form.elements.district.value.trim(),
-      p_pin_code: form.elements.pin_code.value.trim()
-    })
-  }
-);
-  
-if (!response.ok) {
-  const errorText = await response.text();
-  throw new Error(errorText || "Registration failed");
-}
+      message.textContent = "Uploading payment screenshot...";
+      const receiptExtension = paymentReceipt.type === "image/jpeg" ? "jpg" : paymentReceipt.type === "image/png" ? "png" : "webp";
+      const receiptPath = `players/payments/${crypto.randomUUID()}.${receiptExtension}`;
+      const receiptUpload = await fetch(`${SUPABASE_URL}/storage/v1/object/payment-receipts/${receiptPath}`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": paymentReceipt.type,
+          "x-upsert": "false"
+        },
+        body: paymentReceipt
+      });
+      if (!receiptUpload.ok) throw new Error("Payment screenshot upload failed: " + await receiptUpload.text());
 
-const savedRows = await response.json();
-const savedRegistration = savedRows?.[0];
+      message.textContent = "Saving player registration...";
+      const registrationResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/register_player_v2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({
+          p_player_name: registration.player_name,
+          p_mobile: registration.mobile,
+          p_age: registration.age,
+          p_role: registration.role,
+          p_address: registration.address,
+          p_photo_path: photoPath,
+          p_father_name: form.elements.father_name.value.trim(),
+          p_date_of_birth: form.elements.dob.value || null,
+          p_whatsapp_number: form.elements.whatsapp.value.trim(),
+          p_player_category: form.elements.player_category.value,
+          p_batting_style: form.elements.batting_style.value,
+          p_bowling_style: form.elements.bowling_style.value,
+          p_preferred_position: form.elements.preferred_position.value,
+          p_village: form.elements.village.value.trim(),
+          p_post_office: form.elements.post_office.value.trim(),
+          p_police_station: form.elements.police_station.value.trim(),
+          p_district: form.elements.district.value.trim(),
+          p_pin_code: form.elements.pin_code.value.trim()
+        })
+      });
+      if (!registrationResponse.ok) throw new Error(await registrationResponse.text() || "Registration failed");
 
-if (!savedRegistration?.application_no) {
-  throw new Error("Application ID was not returned.");
-}
-if (message) {
-  message.textContent =
-    "Registration successful! Your Application ID: " +
-    savedRegistration.application_no +
-    ". Save this ID for status checking.";
-}
+      const savedRows = await registrationResponse.json();
+      const savedRegistration = savedRows?.[0];
+      if (!savedRegistration?.application_no) throw new Error("Application Number was not returned by the database.");
+      const applicationNo = savedRegistration.application_no;
 
+      message.textContent = "Saving payment record...";
+      const lookupResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_player_registration_id`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        },
+        body: JSON.stringify({ p_application_no: applicationNo, p_mobile: registration.mobile })
+      });
+      if (!lookupResponse.ok) throw new Error(`Registration ${applicationNo} was saved, but payment linking failed. Contact the organisers with this Application Number.`);
+      const registrationId = await lookupResponse.json();
+      if (!registrationId) throw new Error(`Registration ${applicationNo} was saved, but its payment could not be linked. Contact the organisers.`);
 
-    
+      const paymentResponse = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          registration_id: registrationId,
+          payment_type: "player_registration",
+          amount: 150,
+          utr_number: paymentUtr,
+          receipt_url: receiptPath,
+          payment_status: "pending"
+        })
+      });
+      if (!paymentResponse.ok) throw new Error(`Registration ${applicationNo} was saved, but payment record failed: ${await paymentResponse.text()}. Contact the organisers.`);
 
       form.reset();
-
+      message.textContent = `Registration and payment submitted successfully! Your Application Number: ${applicationNo}. Payment verification is pending. Save this number for status checking.`;
+      message.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch (error) {
-
-      console.error("HBPL Registration Error:", error);
-
-      if (message) {
-        message.textContent =
-          "Registration failed: " + error.message;
-      }
-
+      console.error("HBPL Registration & Payment Error:", error);
+      message.textContent = "Submission failed: " + error.message;
     } finally {
-
       if (button) button.disabled = false;
-
     }
-
   });
-
 }
+
 // TEAM REGISTRATION
 const teamForm = document.getElementById("teamForm");
 const teamMessage = document.getElementById("teamMessage");
@@ -395,157 +396,83 @@ if (teamForm) {
     }
   });
 } 
-// PAYMENT FORM
+// TEAM ENTRY / AUCTION PAYMENT FORM (player payment is in registration Step 4)
 const paymentForm = document.getElementById("paymentForm");
 
 if (paymentForm) {
-    const paymentType = document.getElementById("paymentType");
-    const paymentAmount = document.getElementById("paymentAmount");
-    const utrNumber = document.getElementById("utrNumber");
-    const paymentMessage = document.getElementById("paymentMessage");
+  const paymentType = document.getElementById("paymentType");
+  const paymentAmount = document.getElementById("paymentAmount");
+  const utrNumber = document.getElementById("utrNumber");
+  const paymentMessage = document.getElementById("paymentMessage");
+  const receiptFile = document.getElementById("receiptFile");
+  const amounts = { team_entry: 7000, auction_money: 25000 };
 
-    const receiptFile = document.getElementById("receiptFile");
+  paymentType.addEventListener("change", () => {
+    paymentAmount.value = amounts[paymentType.value] || "";
+  });
 
-    const amounts = {
-  player_registration: 150,
-  team_entry: 7000,
-  auction_money: 25000
-};
+  paymentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const type = paymentType.value;
+    const utr = utrNumber.value.trim();
+    const amount = amounts[type];
+    const file = receiptFile.files[0];
+    if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
+      paymentMessage.textContent = "Please enter valid payment details and upload screenshot.";
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      paymentMessage.textContent = "Only JPG, PNG or WebP screenshots up to 2 MB are allowed.";
+      return;
+    }
 
-    paymentType.addEventListener("change", () => {
-        paymentAmount.value = amounts[paymentType.value] || "";
-    });
-
-    paymentForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-
-        const type = paymentType.value;
-
-      const applicationNo = document.getElementById("paymentApplicationNo").value.trim();
-const registeredMobile = document.getElementById("paymentRegisteredMobile").value.trim();
-        const utr = utrNumber.value.trim();
-        const amount = amounts[type];
-        const file = receiptFile.files[0];
-
-      if (
-  type === "player_registration" &&
-  (
-    !applicationNo ||
-    !registeredMobile ||
-    !/^HBPL2-\d{4}$/.test(applicationNo) ||
-    !/^[0-9]{10}$/.test(registeredMobile)
-  )
-) {
-  paymentMessage.textContent =
-    "Please enter valid Application Number and registered mobile number.";
-  return;
+    const button = paymentForm.querySelector('button[type="submit"]');
+    button.disabled = true;
+    paymentMessage.textContent = "Uploading screenshot...";
+    try {
+      const extension = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
+      const filePath = `${crypto.randomUUID()}.${extension}`;
+      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/payment-receipts/${filePath}`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": file.type,
+          "x-upsert": "false"
+        },
+        body: file
+      });
+      if (!uploadResponse.ok) throw new Error("Screenshot upload failed: " + await uploadResponse.text());
+      paymentMessage.textContent = "Saving payment details...";
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          registration_id: null,
+          payment_type: type,
+          amount,
+          utr_number: utr,
+          receipt_url: filePath,
+          payment_status: "pending"
+        })
+      });
+      if (!response.ok) throw new Error("Payment record failed: " + await response.text());
+      paymentMessage.textContent = "Payment submitted successfully! Verification is pending.";
+      paymentForm.reset();
+      paymentAmount.value = "";
+    } catch (error) {
+      paymentMessage.textContent = "Error: " + error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
-
-if (!amount || !utr || utr.length < 8 || utr.length > 30 || !file) {
-  paymentMessage.textContent =
-    "Please enter valid payment details and upload screenshot.";
-  return;
-}
-
-        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
-            paymentMessage.textContent = "Only JPG, PNG or WebP images up to 5 MB are allowed.";
-            return;
-        }
-
-        const button = paymentForm.querySelector('button[type="submit"]');
-        button.disabled = true;
-        paymentMessage.textContent = "Uploading screenshot...";
-
-        let uploadedPath = "";
-
-        try {
-            const extension = file.type === "image/jpeg" ? "jpg" :
-                              file.type === "image/png" ? "png" : "webp";
-
-            const filePath = `${crypto.randomUUID()}.${extension}`;
-
-            const uploadResponse = await fetch(
-                `${SUPABASE_URL}/storage/v1/object/payment-receipts/${filePath}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": file.type,
-                        "x-upsert": "false"
-                    },
-                    body: file
-                }
-            );
-
-            if (!uploadResponse.ok) {
-                throw new Error("Screenshot upload failed: " + await uploadResponse.text());
-            }
-
-            uploadedPath = filePath;
-            paymentMessage.textContent = "Saving payment details...";
-          const lookupResponse = await fetch(
-  `${SUPABASE_URL}/rest/v1/rpc/get_player_registration_id`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`
-    },
-    body: JSON.stringify({
-      p_application_no: applicationNo,
-      p_mobile: registeredMobile
-    })
-  }
-);
-
-if (!lookupResponse.ok) {
-  throw new Error("Player registration lookup failed.");
-}
-
-const registrationId = await lookupResponse.json();
-
-if (type === "player_registration" && !registrationId) {
-  throw new Error("Player registration not found.");
-}
-
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": SUPABASE_KEY,
-                    "Authorization": `Bearer ${SUPABASE_KEY}`,
-                    "Prefer": "return=minimal"
-                },
-                body: JSON.stringify({
-  registration_id: type === "player_registration" ? registrationId : null,
-  payment_type: type,
-  amount: amount,
-  utr_number: utr,
-  receipt_url: uploadedPath,
-  payment_status: "pending"
-})
-            });
-
-            if (!response.ok) {
-                throw new Error("Payment record failed: " + await response.text());
-            }
-
-            paymentMessage.textContent =
-                "Payment submitted successfully! Verification is pending.";
-
-            paymentForm.reset();
-            paymentAmount.value = "";
-
-        } catch (error) {
-            paymentMessage.textContent = "Error: " + error.message;
-        } finally {
-            button.disabled = false;
-        }
-    });
-}
-      // PLAYER STATUS CHECK
+// PLAYER STATUS CHECK
 const playerStatusForm = document.getElementById("playerStatusForm");
 const playerStatusMessage = document.getElementById("playerStatusMessage");
 
@@ -640,7 +567,8 @@ async function loadPublicWebsitePeople() {
       name.textContent = person.full_name;
 
       const role = document.createElement("p");
-      role.textContent = person.designation;
+      role 
+.textContent = person.designation;
 
       card.append(name, role);
 
@@ -661,5 +589,5 @@ async function loadPublicWebsitePeople() {
 }
 
 loadPublicWebsitePeople();
-  
+
 }
