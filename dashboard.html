@@ -199,9 +199,12 @@ async function loadPayments() {
   const filter = document.getElementById("paymentFilter");
 
   const { data, error } = await db
-    .from("payments")
-    .select("id,payment_type,amount,utr_number,payment_status,receipt_url,created_at")
-    .order("created_at", { ascending: false });
+    
+.from("payments")
+.select("id,payment_type,amount,utr_number,payment_status,receipt_url,created_at")
+.neq("payment_type", "player_registration")
+.order("created_at", { ascending: false });
+  
 
   if (error) {
     message.textContent = "Error: " + error.message;
