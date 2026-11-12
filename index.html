@@ -71,16 +71,15 @@
     <section class="registration section" id="registration">
       <div class="section-label">03 / JOIN THE LEAGUE</div>
       <div class="registration-grid">
-        <div><h2>READY TO<br><em>PLAY BIG?</em></h2><p>Register your interest for HBPL Season 2. Our organising team will contact you with the next steps.</p><div class="reg-price"><span>PLAYER REGISTRATION FEE</span><b>₹150</b></div><small class="note">Player registration is open for HBPL Season 2. Submit your details and our organising team will contact you. Online payment is not connected yet.
-        
-</small>
+        <div><h2>READY TO<br><em>PLAY BIG?</em></h2><p>Register your interest for HBPL Season 2. Our organising team will contact you with the next steps.</p><div class="reg-price"><span>PLAYER REGISTRATION FEE</span><b>₹150</b></div><small class="note">Player registration is open for HBPL Season 2. Submit your details and our organising team will contact you. Online payment will be submitted in Step 4.
+        </small>
         </div>
 <form id="regForm" class="reg-form">
 
   <!-- WIZARD PROGRESS -->
   <div class="wizard-progress full">
     <div class="wizard-progress-top">
-      <strong id="wizardStepLabel">STEP 1 OF 3</strong>
+      <strong id="wizardStepLabel">STEP 1 OF 4</strong>
       <span id="wizardStepName">Personal Information</span>
     </div>
     <div class="wizard-track">
@@ -241,22 +240,37 @@
 
   <!-- STEP 3: PREVIEW -->
   <div class="wizard-panel full" data-wizard-step="3" hidden>
-
     <div class="wizard-panel-title">Preview Your Application</div>
-
-    <p>Please check all information carefully before submission.</p>
-
+    <p>Please check all information carefully before continuing to payment.</p>
     <div id="playerRegistrationPreview" class="player-preview"></div>
-
     <div class="wizard-actions full">
-      <button class="btn btn-outline-dark" type="button"
-        data-wizard-back="2">← Edit Details</button>
-
-      <button class="btn btn-gold" type="submit">
-        Final Submit ↗
-      </button>
+      <button class="btn btn-outline-dark" type="button" data-wizard-back="2">← Edit Details</button>
+      <button class="btn btn-gold" type="button" data-wizard-next="4">Continue to Payment →</button>
     </div>
+  </div>
 
+  <!-- STEP 4: PAYMENT -->
+  <div class="wizard-panel full" data-wizard-step="4" hidden>
+    <div class="wizard-panel-title">Step 4 — Registration Payment</div>
+    <p>Pay the ₹150 player registration fee using the official HBPL QR code.</p>
+    <div class="fee-banner full"><div><small>PLAYER REGISTRATION FEE</small><b>₹150</b></div></div>
+    <div class="payment-instructions full">
+      <h3>Scan & Pay</h3>
+      <img src="/mahfooz-payment-qr.png" alt="HBPL official payment QR code" style="width:100%;max-width:280px;display:block;margin:15px auto;">
+      <p><strong>UPI ID:</strong> amzn0013351097@apl</p>
+      <p>After paying, enter your UTR number and upload the payment screenshot.</p>
+    </div>
+    <label class="full">UTR / Transaction Number *
+      <input name="payment_utr" type="text" minlength="8" maxlength="30" placeholder="Enter UTR / transaction number" required>
+    </label>
+    <label class="full">Payment Screenshot *
+      <input name="payment_receipt" type="file" accept="image/jpeg,image/png,image/webp" required>
+      <small>JPG, PNG or WebP. Maximum 2 MB.</small>
+    </label>
+    <div class="wizard-actions full">
+      <button class="btn btn-outline-dark" type="button" data-wizard-back="3">← Back to Preview</button>
+      <button class="btn btn-gold" type="submit">Submit Registration & Payment ↗</button>
+    </div>
   </div>
 
   <div id="formMessage" class="form-message full"
@@ -348,7 +362,7 @@
 
   <div class="section-heading">
     <h2>💳 Tournament <em>Payment</em></h2>
-    <p>Pay using QR code and submit your UTR number.</p>
+    <p>For team entry and auction payments, pay using QR code and submit your UTR number. Player payment is included in the registration wizard.</p>
   </div>
 
   <div class="registration-grid">
@@ -368,30 +382,13 @@
     </div>
 
     <div>
-      <h2>Submit Payment Details</h2>
+      <h2>Submit Team / Auction Payment Details</h2>
 
       <form id="paymentForm" class="reg-form">
-<label>Player Application Number
-    <input
-        type="text"
-        id="paymentApplicationNo"
-        placeholder="Example: HBPL2-0012"
-    >
-</label>
-
-<label>Registered Mobile Number
-    <input
-        type="tel"
-        id="paymentRegisteredMobile"
-        placeholder="Enter registered mobile number"
-        maxlength="10"
-    >
-</label>
-        <label>Payment Type
+<label>Payment Type
           <select id="paymentType" required>
             <option value="">Select Payment Type</option>
-            <option value="player_registration">Player Registration - ₹150</option>
-<option value="team_entry">Team Registration - ₹7,000</option>
+            <option value="team_entry">Team Registration - ₹7,000</option>
 <option value="auction_money">Auction Money - ₹25,000</option>
           </select>
         </label>
@@ -482,4 +479,5 @@
     <a class="brand" href="#home"><span class="brand-ball">🏏</span><span><b>HBPL</b><small>HAL BAIDA PREMIER LEAGUE</small></span></a><span>SEASON 2 · 2027</span><span>© HBPL. ALL RIGHTS RESERVED.</span></footer>
   <script src="script.js"></script>
 </body>
-</html>
+  </html>
+      
