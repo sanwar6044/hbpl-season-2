@@ -617,6 +617,67 @@ await loadPlayers();
         card.appendChild(btn);
       });
 
+if (p.registration_status === "rejected") {
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑️ Delete Player";
+  deleteBtn.style.margin = "8px";
+  deleteBtn.style.background = "#dc2626";
+  deleteBtn.style.color = "white";
+
+  deleteBtn.onclick = async () => {
+    if (!confirm(
+      "Permanently delete this rejected player, their registration payments and related photos?"
+    )) return;
+
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = "Deleting...";
+
+    const { data, error } = await db.rpc(
+      "admin_delete_rejected_player_registration",
+      { p_registration_id: p.id }
+    );
+
+    if (error) {
+      alert("Delete failed: " + error.message);
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = "🗑️ Delete Player";
+      return;
+    }
+
+    const cleanupErrors = [];
+
+    if (data?.player_photo_path) {
+      const { error: photoError } = await db.storage
+        .from("registration-photos")
+        .remove([data.player_photo_path]);
+
+      if (photoError) cleanupErrors.push(photoError.message);
+    }
+
+    const receiptPaths = data?.receipt_paths || [];
+
+    if (receiptPaths.length) {
+      const { error: receiptError } = await db.storage
+        .from("payment-receipts")
+        .remove(receiptPaths);
+
+      if (receiptError) cleanupErrors.push(receiptError.message);
+    }
+
+    if (cleanupErrors.length) {
+      alert("Database deleted, but some files need cleanup: " +
+        cleanupErrors.join(", "));
+    } else {
+      alert("Player and related records and photos deleted successfully!");
+    }
+
+    await loadPlayers();
+    await loadPayments();
+  };
+
+  card.appendChild(deleteBtn);
+}
+      
       list.appendChild(card);
     });
   }
