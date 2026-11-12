@@ -383,6 +383,34 @@ async function loadPlayers() {
     return;
   }
 
+  // Fetch existing player registration payments
+  const registrationIds = data.map(p => p.id);
+  let playerPayments = [];
+
+  if (registrationIds.length) {
+    const paymentResult = await db
+      .from("payments")
+      .select("id,registration_id,amount,utr_number,payment_status,receipt_url")
+      .eq("payment_type", "player_registration")
+      .in("registration_id", registrationIds)
+      .order("created_at", { ascending: false });
+
+    if (paymentResult.error) {
+      message.textContent = "Payment loading error: " + paymentResult.error.message;
+      return;
+    }
+
+    playerPayments = paymentResult.data || [];
+  }
+
+  const paymentsByRegistration = new Map();
+
+  playerPayments.forEach(payment => {
+    if (!paymentsByRegistration.has(payment.registration_id)) {
+      paymentsByRegistration.set(payment.registration_id, payment);
+    }
+  });
+  
   // Registration counts
   document.getElementById("totalPlayers").textContent =
     data.length;
@@ -433,14 +461,24 @@ async function loadPlayers() {
       const title = document.createElement("h3");
       title.textContent = p.player_name || "Unnamed Player";
 
-      const details = document.createElement("p");
-      details.textContent =
-        "Application: " + (p.application_no || "N/A") +
-        " | Mobile: " + (p.mobile || "N/A") +
-        " | Age: " + (p.age || "N/A") +
-        " | Role: " + (p.role || "N/A") +
-        " | Status: " + (p.registration_status || "N/A");
+      
+const playerPayment = paymentsByRegistration.get(p.id);
 
+const details = document.createElement("p");
+details.textContent =
+  "Application: " + (p.application_no || "N/A") +
+  " | Mobile: " + (p.mobile || "N/A") +
+  " | Age: " + (p.age || "N/A") +
+  " | Role: " + (p.role || "N/A") +
+  " | Registration: " + (p.registration_status || "pending") +
+  " | Payment: " + (
+    playerPayment
+      ? "₹" + playerPayment.amount +
+        " | UTR: " + (playerPayment.utr_number || "N/A") +
+        " | " + (playerPayment.payment_status || "pending")
+      : "Not submitted"
+  );
+      
       const view = document.createElement("button");
       view.textContent = "View Details";
 
@@ -501,6 +539,31 @@ async function loadPlayers() {
       };
       card.append(title, details, view, photoButton);
 
+if (playerPayment && playerPayment.receipt_url) {
+  const receiptButton = document.createElement("button");
+  receiptButton.textContent = "🧾 View Payment Screenshot";
+  receiptButton.style.margin = "8px";
+
+  receiptButton.onclick = async () => {
+    receiptButton.disabled = true;
+
+    const { data: receipt, error } = await db.storage
+      .from("payment-receipts")
+      .createSignedUrl(playerPayment.receipt_url, 300);
+
+    receiptButton.disabled = false;
+
+    if (error || !receipt?.signedUrl) {
+      alert("Payment screenshot could not be loaded.");
+      return;
+    }
+
+    window.open(receipt.signedUrl, "_blank");
+  };
+
+  card.appendChild(receiptButton);
+}
+      
       ["approved", "rejected"].forEach(status => {
         const btn = document.createElement("button");
 
@@ -516,19 +579,39 @@ async function loadPlayers() {
 
           btn.disabled = true;
 
-          const { error } = await db
-            .from("registrations")
-            .update({ registration_status: status })
-            .eq("id", p.id);
+          
+const { error } = await db
+  .from("registrations")
+  .update({ registration_status: status })
+  .eq("id", p.id);
 
-          if (error) {
-            alert("Update failed: " + error.message);
-            btn.disabled = false;
-            return;
-          }
+if (error) {
+  alert("Player update failed: " + error.message);
+  btn.disabled = false;
+  return;
+}
 
-          alert("Player status updated successfully!");
-          await loadPlayers();
+if (playerPayment) {
+  const nextPaymentStatus =
+    status === "approved" ? "verified" : "rejected";
+
+  const { error: paymentError } = await db
+    .from("payments")
+    .update({ payment_status: nextPaymentStatus })
+    .eq("id", playerPayment.id)
+    .eq("registration_id", p.id)
+    .eq("payment_type", "player_registration");
+
+  if (paymentError) {
+    alert("Player status updated, but payment update failed: " + paymentError.message);
+    await loadPlayers();
+    return;
+  }
+}
+
+alert("Player and payment status updated!");
+await loadPlayers();
+          
         };
 
         card.appendChild(btn);
